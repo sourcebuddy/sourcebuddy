@@ -1,0 +1,50 @@
+-- This file defines the version of the project mas well as many other versions used all over the project.
+-- The central location of all the versions make maintenance easier.
+
+-- define the macro that uses its lines to define the versions of the modules
+{@define VERSIONS($x)=
+{!!@for [separator="\n" subseparator="=" skipForEmpty lenient evalist] ($ID,$VERSION) in `VERSION_LINES`
+{@replaceLines replace="/\\s*--.*/"
+$x
+}
+`VERSION_LINES`={@if [not blank] /$ID/{@define $ID=$VERSION}}}}}
+
+
+{VERSIONS
+
+--------------------------------------------------------------------------------------------------------------------
+--
+-- This is the main version of the project.
+--
+--------------------------------------------------------------------------------------------------------------------
+
+VERSION=1.0.2-SNAPSHOT                    -- https://repo.maven.apache.org/maven2/com/javax0/SourceBuddy/
+
+GROUPID=com.javax0.jamal                   -- the project groupId.
+
+MODULE_PREFIX=jamal.                       -- module names are jamal.XXX
+PACKAGE_PREFIX=javax0.jamal.               -- package names are less restrictive and it is not likely that anyone else would use javax0 as top level package
+
+JAVA_RELEASE=11
+JAVA_SOURCE=17
+JAVA_TARGET=11
+
+
+SONATYPE_PLUGIN_VERSION=1.6.13             -- https://repo.maven.apache.org/maven2/org/sonatype/plugins/nexus-staging-maven-plugin
+
+-- dependencies
+-- plugin dependencies
+MAVEN_COMPILER_PLUGIN_VERSION=3.9.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin
+MAVEN_JAVADOC_PLUGIN_VERSION=3.4.0         -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin
+MAVEN_GPG_PLUGIN_VERSION=3.0.1             -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-gpg-plugin/
+MAVEN_ASSEMBLY_PLUGIN_VERSION=3.3.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/
+SUREFIRE_PLUGIN_VERSION=3.0.0-M5           -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-surefire-plugin
+MAVEN_SOURCE_PLUGIN_VERSION=3.2.1          -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-source-plugin
+
+-- test dependency
+JUPITER_VERSION=5.9.0                      -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-api
+                                           -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-engine
+                                           -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-params
+MOCKITO_VERSION=4.6.1                      -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core/
+JAMAL_VERSION=1.12.3                       -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
+}

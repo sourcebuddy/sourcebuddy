@@ -1,0 +1,143 @@
+package com.javax0.sourcebuddy;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+import static java.lang.String.format;
+
+@DisplayName("Test the simple one source compilation call")
+public class CompilerTest {
+
+    private String loadJavaSource(String name) throws IOException {
+        try (final var is = this.getClass().getResourceAsStream(name)) {
+            return new String(Objects.requireNonNull(is).readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
+    @DisplayName("source code compiles")
+    public void goodSimpleCode()
+            throws Exception {
+        final String source = loadJavaSource("Test1.java");
+        Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test1", source);
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("erroneous source returns null class")
+    public void erroneousSourceCode()
+            throws Exception {
+        final String source = loadJavaSource("TestError.java");
+        Assertions.assertThrows(Compiler.CompileException.class, () -> Compiler.compile("com.javax0.sourcebuddy.TestError", source));
+    }
+
+    @Test
+    @DisplayName("source code with subclasses works fine")
+    public void sourceCodeWithSubclass()
+            throws Exception {
+        final String source = loadJavaSource("Test2.java");
+        Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test2", source);
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("method");
+        int i = (int) f.invoke(object, null);
+        Assertions.assertEquals(1, i);
+    }
+
+    @Test
+    @DisplayName("source code with subclasses works fine using fluent api")
+    public void usingFluentApi()
+            throws Exception {
+        final String source = loadJavaSource("Test2.java");
+        Class<?> newClass =
+                Compiler.java().from("com.javax0.sourcebuddy.Test2", source).compile().load().get("com.javax0.sourcebuddy.Test2");
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("method");
+        int i = (int) f.invoke(object, null);
+        Assertions.assertEquals(1, i);
+    }
+
+    @Test
+    @DisplayName("after compilation the 'get' can give a \"normal\", not recently compiled class as well")
+    public void loadsNormalClassesAsWell() throws Exception {
+        final String source = loadJavaSource("Test2.java");
+        final var loaded =
+                Compiler.java().from("com.javax0.sourcebuddy.Test2", source).compile().load();
+        final var stringClass = loaded.get("java.lang.String");
+        Assertions.assertEquals(String.class, stringClass);
+    }
+
+    private static final int N = 2;
+
+    @Test
+    @DisplayName("generated class files are saved")
+    public void saveClassFiles() throws Exception {
+        final var sut = loadAll();
+        final var target = "./target/test-classes";
+        sut.compile().saveTo(Paths.get(target));
+        for (int i = 1; i <= N; i++) {
+            final var file = Paths.get(target, format("com/javax0/sourcebuddy/Test%d.class", i));
+            Assertions.assertTrue(Files.exists(file));
+            final var byteCode = Files.readAllBytes(file);
+            Assertions.assertEquals(byteCode[0], (byte) 0xCA);
+            Assertions.assertEquals(byteCode[1], (byte) 0xFE);
+            Assertions.assertEquals(byteCode[2], (byte) 0xBA);
+            Assertions.assertEquals(byteCode[3], (byte) 0xBE);
+        }
+    }
+
+    @Test
+    @DisplayName("get the stream of classes")
+    public void getStreamOfClasses() throws Exception {
+        final var classes = new HashSet<>(Set.of(
+                "com.javax0.sourcebuddy.Test1",
+                "com.javax0.sourcebuddy.Test2",
+                "com.javax0.sourcebuddy.Test2$Hallo",
+                "com.javax0.sourcebuddy.Test2$1"));
+        final var sut = loadAll();
+        sut.compile().load().stream().forEach(klass -> {
+            // all that finds were expected
+            final var cn = klass.getName();
+            Assertions.assertTrue(classes.remove(cn), format("class '%s' was not expected", cn));
+        });
+        // finds all
+        Assertions.assertEquals(0, classes.size());
+    }
+
+    private Fluent.CanCompile loadAll() throws IOException {
+        final var source = new ArrayList<String>();
+        for (int i = 1; i <= N; i++) {
+            source.add(loadJavaSource(format("Test%d.java", i)));
+        }
+        var sut = (Fluent.AddSource)Compiler.java();
+        for (int i = 1; i <= N; i++) {
+            sut = sut.from(format("com.javax0.sourcebuddy.Test%d", i), source.get(i - 1));
+        }
+        return (Fluent.CanCompile) sut;
+    }
+
+    @Test
+    @DisplayName("Compile all classes from a directory")
+    void compileAllFromFile() throws Exception {
+        final var classes = Compiler.java().from(Paths.get("./src/test/resources/source_tree")).compile().load();
+        Class<?> newClass = classes.get("com.javax0.sourcebuddy.Test1");
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("x", s);
+    }
+
+}

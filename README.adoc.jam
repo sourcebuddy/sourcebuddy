@@ -1,0 +1,279 @@
+{%@define SB=SourceBuddy%}
+= {%SB%}
+
+{%@define numberedSample($X)=[source,java]
+----
+{%#numberLines format="%2d. "
+{%#trimLines
+{%@snip $X%}%}%}
+----%}
+{%@define sample($X)=[source,java]
+----
+{%#trimLines
+{%@snip $X%}%}
+----%}
+
+{%@snip:collect from="src/test/java"%}
+{%@snip:collect from="src/main/java"%}
+{%SB%} is very simple Java source compiler facade in front of the JDK provided `javac` compiler.
+It was designed for application creating Java source code on the fly during run-time.
+The JDK API is complex and hard to use.
+You have to implement a `JavaFileManager`, `JavaFileObject` which is possible, but SourceBuddy does it for you.
+
+Using {%SB%} you do not need to implement anything, except your own application logic.
+You get a `Compiler` object calling the `Compiler.java()` and from there all you need is
+
+* specify the source code either as Java strings or files,
+* call `compile()`
+* fetch the compiled `.class` files or the loaded classes.
+
+If your application is simple generating only one Java file the library provides a one-call API.
+You can call the `Compiler.compile(className,sourceCode)` static method that does everything.
+It compiles the source code, loads the class(es) generated from the source and returns the class.
+
+The following example shows how to use the one-call API:
+
+{%numberedSample simple_compile%}
+
+The to-be-compiled code is defined in the string variable `source`.
+The compilation and loading of the class happens  on the line 8.
+This is the line using the compilation API.
+The following lines are standard reflection calls accessing the compiled and loaded class.
+
+In this document we will explain the details, how to use the library, including
+
+* dependency parameters,
+
+* simple API,
+
+* Fluent API,
+
+* support.
+
+== Dependency Parameters
+{%@snip:xml pom=./pom.xml%}
+
+To use the library it has to me on the classpath for your application, as it is for every library.
+The library is available from Maven central.
+The Maven central coordinates are:
+
+[source,xml]
+----
+<dependency>
+    <groupId>{%pom //project/groupId%}</groupId>
+    <artifactId>{%pom //project/artifactId%}</artifactId>
+    <version>{%pom //project/version%}</version>
+</dependency>
+----
+
+== Simple APi
+
+The simple API can be used in projects that need to compile only one source file in a compilation unit.
+To do that, the class `Compiler` defines a static method `compile`.
+
+[soure,java]
+----
+{%#trimLines
+{%#killLines keep pattern="myClassClass\\s+="
+{%@snip simple_compile%}%}%}
+----
+
+The first parameter of the method is the binary name of the class to be compiled.
+The second parameter is the string source code of the class.
+
+[NOTE]
+====
+The binary name of a class is the name returned by the method `Class.getName()`.
+A class can have three different names:
+
+* Simple name,
+
+* Canonical name, and
+
+* Binary name, many times referred to as name.
+
+The simple name is the name of the class without any package prefix or enclosing class prefix.
+The canonical name is the name we usually refer to the classes in the Java source when the class is not imported and hence the full name is to be used.
+Binary name is the name, how the JVM knows the class.
+With some simplification the binary name of the class has the `$` in it for anonymous and inner classes.
+Canonical names have `.` between the name of the outer class and the inner class.
+====
+
+The return value of the method is the class compiled and loaded into the JVM.
+If there is an error during the compilation the call with throw an `CompileException` with the error message in the exception message.
+
+== Fluent API
+
+The fluent API is available when there are more files to be compiled, or when you want to do something other than loading with the class files.
+
+The fluent API is chained offering the possible methods in the order they have to be used.
+To demonstrate the use of the API we will use the sample code:
+
+{%numberedSample/api_doc%}
+{%@define src($N)=[source,java]
+----
+{%#range lines=$N..$N
+{%@snip api_doc%}%}
+----%}
+{%@counter:define id=STEP format="%d. "%}
+
+=== {%STEP%} Get the compiler object
+
+To start with the compilation you have to have a `Compiler` object.
+To get that you have to call the
+
+{%src 8%}
+
+=== {%STEP%} Add sources
+
+The next step is to add the source files to the compiler object.
+To do that you can specify the sources one-by-one as strings, or you can add directories where the source files are.
+For both of these operations the overloaded method `from()` is used.
+
+To add sources individually you can call
+
+{%src 9%}
+
+The first argument is the binary name of the class, the second is the actual source code.
+To add multiple sources you can call this method one after the other as many times as you wish.
+However, if the sources are in the file system in a directory, you can also call
+
+{%src 10%}
+
+In this call you specify only one parameter, a path pointing to the source root.
+This is the directory where the directory structure matching the Java package structure starts.
+If you have multiple source trees on the disk you can have many calls to this method.
+You can also add some of the sources as string, individually and others scanned from the file system.
+
+=== {%STEP%} Compile
+
+After the sources were loaded the next thing is to compile:
+
+{%src 11%}
+
+The result of the compilation is that the bytes codes for the Java source files are generated.
+They are not loaded as Java classes into the memory yet.
+
+=== {%STEP%} Save the byte codes
+
+The next step you can do is, that you can save the byte codes.
+This is not a must.
+If you do not need the compiled byte codes in the file system you can ignore this step.
+
+{%src 12%}
+
+The argument to this method is the path where the class files will be saved to.
+If the directory does not exists it will be created recursively.
+It will create all the subdirectories corresponding to the package structure.
+Adding this directory to a standard URL class loader will be able to load these files from the disk.
+
+The return value of this method is `void`, no chainable.
+This method is usually the last action you invoke on a compiler.
+
+=== {%STEP%} Stream through the byte codes
+
+Sometimes you do not want to save the byte code to `.class` files.
+You can use the compiler object at this stage to iterate through the compiled codes calling
+
+{%src 13%}
+
+The return value of the method `stream()` at this point is `Stream<byte[]>`.
+It is up to you how you use these byte arrays.
+
+Many times you may also need the binary name of the class.
+To get the name you can call the static method `getBinaryName()`.
+This is a utility method that gauges the name of the class from the binary representation.
+You can use this method for the purpose for any byte code, not only those compiled with the compiler.
+
+NOTE: The `getBinaryName()` implementation supports JVM byte code up to {%@snip JVM_VERSION /(\d+)/%}, which is Java {%@snip JAVA_VERSION /(\d+)/%}.
+
+The API built into the Java runtime is complex because it is designed to handle several input (Java source code) and output (generated byte code) reading and writing possibilities. This needs the implementation of complex classes that provide the source code and can store the generated byte code.
+
+To ease the burden this library implements these classes along with a class loader to handle the simple case when you want to compile Java source available during run-time in String objects and you want to load the compiled classes instead generating `.class` files.
+
+=== {%STEP%} Load the classes
+
+Applications want not only to compile the Java classes on the fly, but also to load them.
+To do that the aptly named method `load()` can be used.
+
+The method `load()` has two versions.
+One without argument, the otherone needing a class loader.
+The simpler and recommended way is:
+
+{%src 14%}
+
+This will load the classes from the memory stored byte code to the JVM.
+This loading will convert the byte codes to `Class` objects.
+
+Using the version of the method `load()` accepting a class loader is a bit tricky.
+The class loader has to be able to load the byte code, which was recently created by the compiler.
+It can be achieved saving the byte code or iterating through them calling `stream()` on the compiled object and feeding them into the class loader.
+Writing a class loader is tricky and advanced technique.
+
+Note that the method `load()` returns an object, which handles the loaded classes.
+It is not the compiler object.
+
+=== {%STEP%} Get access to the classes
+
+When the classes are loaded your code will want to access some of them.
+Since these classes are created during run-tim they are not available during the compile time of your program.
+You can get access to the class objects from the compilers and from there you should use standard reflection API.
+
+To get a class object by the name you can call
+
+{%src 15%}
+
+=== {%STEP%} Stream through the class objects
+
+You can also get a stream of the classes.
+
+{%src 16%}
+
+Since the method `load()` returned a new object, this time the method `stream()` is a different one.
+This returns a `Stream<Class>` types and not the byte codes.
+
+=== {%STEP%} Reset the compiler
+
+Last, but not least you can reset the compiler.
+You may need to reset the compiler to reuse it to compile additional sources.
+In most of the cases it is better to get a new compiler calling
+
+{%src 8%}
+
+The only case when the resuse of the compiler is needed when the classes in the new compilation etap need access to the classes in the previous etap.
+Using two different compiler object will compile classes which see the classes of the 'host' code and the classes added to the compiler, but not each other.
+When a comiler object is reset the next compilation round will see all the host classes as well as all the classes compiled previously and added in the current etap.
+
+When the compilation starts the compiler will compile all the java classes which were ever added to the compilation.
+It means that older classes already compiled will be compiled again, consuming CPU.
+This is the reason why it is not recommended to reset the compiler object, except when it is absolutely needed.
+
+To reset the compiler you can invoke the method
+
+{%src 17%}
+
+You can invoke this method even when the classes were loaded, but also on the compiler object before loading the classes:
+
+{%src 18%}
+
+The object you get back from both of these calls is the same as the one you can calling
+
+{%src 8%}
+
+with the exception that it already contains the classes you added to it previously.
+
+WARNING: You can not redefine a class that was already compiled.
+The new source file for an already existing class name will be compiled.
+It will be stored, you will get the new version when calling `stream()`, you can save the new version.
+It will not, however, loaded into memory when you call `load()`.
+The class loader will see that a class under its management is already loaded and skip the loading.
+
+== Support
+
+The project is open source, non commercial, License is Apache v2.0
+
+I cannot write that the project is actively developed and supported, because this sentence will remain on the internet long after I died.
+Have faith, if you have a question, suggestion anything, create a ticket on GitHub in the project repo.
+I am a nice guy, I answer all questions, and my motto from the time when I was teaching at TU Budapest is that there is no stupid question, only stupid answer.
+I only realized later that this motto was firing back during the exams, so I did not use it later.
+Here, however, there are no exams.

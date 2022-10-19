@@ -1,0 +1,106 @@
+{@import https://raw.githubusercontent.com/central7/pom/1/pom.jim}
+{@import versions.jim}
+{@define taglets($x)=<taglets>$x</taglets>}
+{@define taglet($x)=<taglet>$x</taglet>}
+{@define tagletArtifacts($x)=<tagletArtifacts>$x</tagletArtifacts>}
+{@define tagletArtifact($x)=<tagletArtifact>$x</tagletArtifact>}
+{@define tagletClass($x)=<tagletClass>$x</tagletClass>}
+{@define additionalOptions($x)=<additionalOptions>$x</additionalOptions>}
+{@define additionalOption($x)=<additionalOption>$x</additionalOption>}
+{@define docletArtifact($x)=<docletArtifact>$x</docletArtifact>}
+{@define doclet($x)=<doclet>$x</doclet>}
+{@define doclint($x)=<doclint>$x</doclint>}
+{project SourceBuddy}
+    {GAV :{GROUPID}:SourceBuddy:{VERSION}}
+    {description This project provides a simple wrapper around the Java compiler API, which is part of the JDK.}
+    {license|The Apache License, Version 2.0|http://www.apache.org/licenses/LICENSE-2.0.txt}
+    {developer|Peter Verhas|peter@verhas.com}
+    {github|verhas|SourceBuddy}
+
+    {properties|
+        {property :project.build.sourceEncoding:UTF-8}
+    }
+    {distributionManagement|
+        {snapshotRepository |ossrh|https://oss.sonatype.org/content/repositories/snapshots}
+        {repository |ossrh|https://oss.sonatype.org/service/local/staging/deploy/maven2/}
+    }
+
+	{build|
+		{plugins|
+            {plugin|
+                {GAV :org.apache.maven.plugins:maven-source-plugin:{MAVEN_SOURCE_PLUGIN_VERSION}}
+                {executions|
+                    {execution|
+                        {id|attach-sources}
+                        {goals|{goal|jar}}
+                    }
+                }
+            }
+            {plugin|
+                {GAV :org.apache.maven.plugins:maven-javadoc-plugin:{MAVEN_JAVADOC_PLUGIN_VERSION}}
+                {configuration|
+                    {detectOfflineLinks false}
+                    {doclint none}
+                    {doclet javax0.jamal.doclet.JamalDoclet}
+                    {docletArtifact {GAV :com.javax0.jamal:jamal-doclet:{JAMAL_VERSION}}}
+                    {additionalOptions
+                        {additionalOption |--source-root}
+                        {additionalOption {@escape* ``${project.build.sourceDirectory}``}}
+                    }
+                    {taglets|
+                        {taglet|
+                            {tagletClass javax0.jamal.doclet.JamalTaglet}
+                            {tagletArtifact {GAV :com.javax0.jamal:jamal-doclet:{JAMAL_VERSION}}}
+                        }
+                    }
+                }
+                {executions|{execution|
+                        {id|attach-javadocs}
+                        {goals|{goal|jar}}}}
+            }
+            {plugin|
+                {GAV :org.apache.maven.plugins:maven-compiler-plugin:{MAVEN_COMPILER_PLUGIN_VERSION}}
+                <configuration>
+                    <source>{JAVA_SOURCE}</source>
+                    <target>{JAVA_TARGET}</target>
+                    <release>{JAVA_RELEASE}</release>
+                </configuration>
+            }
+            {plugin|
+                {GAV :org.apache.maven.plugins:maven-surefire-plugin:{SUREFIRE_PLUGIN_VERSION}}
+            }
+            {plugin|
+                  {GAV :org.sonatype.plugins:nexus-staging-maven-plugin:{SONATYPE_PLUGIN_VERSION}}
+                  {extensions :true}
+                  {configuration|
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                  }
+            }
+        }
+    }
+
+	{dependencies
+	    {dependency|org.mockito|mockito-core|{MOCKITO_VERSION}|test}
+	    {@for MODULE in (api,engine,params)={dependency :org.junit.jupiter:junit-jupiter-MODULE:{JUPITER_VERSION}:test}}
+	}
+
+	{profiles|
+        {profile release}
+            {build|
+                {plugins|
+                    {plugin|
+                        {GAV :org.apache.maven.plugins:maven-gpg-plugin:{MAVEN_GPG_PLUGIN_VERSION}}
+                        {executions|{execution
+                            {id :sign-artifacts}
+                            {phase :verify}
+                            {goals|{goal :sign}}
+                        }}
+                    }
+                }
+           }
+        {end profile}
+    }
+
+{end project}
