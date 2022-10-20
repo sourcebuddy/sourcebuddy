@@ -20,15 +20,14 @@ public class TestDemo {
         // snippet simple_compile
         String source = "package com.sb.demo;\n" +
                 "\n" +
-                "public class MyClass {\n" +
+                "public class MyClass implements TestInterface{\n" +
                 "    public String a() {\n" +
                 "        return \"x\";\n" +
                 "  }\n" +
                 "}";
         Class<?> myClassClass = Compiler.compile("com.sb.demo.MyClass", source);
-        Object myClass = myClassClass.getConstructor().newInstance();
-        Method a = myClassClass.getDeclaredMethod("a");
-        String s = (String) a.invoke(myClass);
+        TestInterface myClass = (TestInterface)myClassClass.getConstructor().newInstance();
+        String s = myClass.a();
         //end snippet
         Assertions.assertEquals("x", s);
     }

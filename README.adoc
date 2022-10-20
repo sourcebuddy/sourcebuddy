@@ -6,21 +6,21 @@
 
 
 
-SourceBuddy is very simple Java source compiler facade in front of the JDK provided `javac` compiler.
-It was designed for application creating Java source code on the fly during run-time.
+SourceBuddy is a very simple Java source compiler facade in front of the JDK-provided `javac` compiler.
+It was designed for applications creating Java source code on the fly during run-time.
 The JDK API is complex and hard to use.
-You have to implement a `JavaFileManager`, `JavaFileObject` which is possible, but SourceBuddy does it for you.
+You have to implement a `JavaFileManager` and `JavaFileObject`, which is possible, but SourceBuddy does it for you.
 
-Using SourceBuddy you do not need to implement anything, except your own application logic.
-You get a `Compiler` object calling the `Compiler.java()` and from there all you need is
+Using SourceBuddy, you do not need to implement anything except your application logic.
+You get a `Compiler` object calling the `Compiler.java()`, and from there, all you need is
 
 * specify the source code either as Java strings or files,
 * call `compile()`
 * fetch the compiled `.class` files or the loaded classes.
 
-If your application is simple generating only one Java file the library provides a one-call API.
+The library provides a one-call API if your application generates only one Java file.
 You can call the `Compiler.compile(className,sourceCode)` static method that does everything.
-It compiles the source code, loads the class(es) generated from the source and returns the class.
+It compiles the source code, loads the class(es) generated from the source, and returns the class.
 
 The following example shows how to use the one-call API:
 
@@ -28,24 +28,25 @@ The following example shows how to use the one-call API:
 ----
  1. String source = "package com.sb.demo;\n" +
  2.         "\n" +
- 3.         "public class MyClass {\n" +
+ 3.         "public class MyClass implements TestInterface{\n" +
  4.         "    public String a() {\n" +
  5.         "        return \"x\";\n" +
  6.         "  }\n" +
  7.         "}";
  8. Class<?> myClassClass = Compiler.compile("com.sb.demo.MyClass", source);
- 9. Object myClass = myClassClass.getConstructor().newInstance();
-10. Method a = myClassClass.getDeclaredMethod("a");
-11. String s = (String) a.invoke(myClass);
+ 9. TestInterface myClass = (TestInterface)myClassClass.getConstructor().newInstance();
+10. String s = myClass.a();
 
 ----
 
 The to-be-compiled code is defined in the string variable `source`.
-The compilation and loading of the class happens  on the line 8.
-This is the line using the compilation API.
-The following lines are standard reflection calls accessing the compiled and loaded class.
+The compilation and loading of the class happen on line 8.
+It is the line using the compilation API.
+The `MyClass` implemented interface, `TestInterface`, is defined in the project's test.
+Classes and interfaces in the host application executing the compilation are available for the Java code to be compiled.
+The instance created using reflection can be cast to the implemented interface (line 9), and the method defined there is invoked in line 10.
 
-In this document we will explain the details, how to use the library, including
+In this document, we will explain the details of how to use the library, including
 
 * dependency parameters,
 
@@ -58,7 +59,7 @@ In this document we will explain the details, how to use the library, including
 == Dependency Parameters
 
 
-To use the library it has to me on the classpath for your application, as it is for every library.
+To use the library, it has to be on the classpath for your application, as it is for every library.
 The library is available from Maven central.
 The Maven central coordinates are:
 
@@ -67,14 +68,14 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.jamal</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ----
 
 == Simple APi
 
-The simple API can be used in projects that need to compile only one source file in a compilation unit.
-To do that, the class `Compiler` defines a static method `compile`.
+You can use the simple API in projects that need to compile only one source file in a compilation unit.
+To do that, the class `com.javax0.sourcebuddy.Compiler` defines a static method `compile`.
 
 [soure,java]
 ----
@@ -82,7 +83,7 @@ Class<?> myClassClass = Compiler.compile("com.sb.demo.MyClass", source);
 
 ----
 
-The first parameter of the method is the binary name of the class to be compiled.
+The method's first parameter is the binary name of the class to be compiled.
 The second parameter is the string source code of the class.
 
 [NOTE]
@@ -97,21 +98,24 @@ A class can have three different names:
 * Binary name, many times referred to as name.
 
 The simple name is the name of the class without any package prefix or enclosing class prefix.
-The canonical name is the name we usually refer to the classes in the Java source when the class is not imported and hence the full name is to be used.
-Binary name is the name, how the JVM knows the class.
-With some simplification the binary name of the class has the `$` in it for anonymous and inner classes.
-Canonical names have `.` between the name of the outer class and the inner class.
+The canonical name is the name we usually refer to the classes in the Java source when the class is not imported; hence, the full name is to be used.
+The binary name is the name of how the JVM knows the class.
+With some simplification, the binary name of the class has the `$` in it for anonymous and inner classes.
+Canonical names have `.` between the name of the outer class and the inner classes' names.
+Anonymous classes have no canonical name.
+In other cases, the binary and canonical names are the same.
 ====
 
-The return value of the method is the class compiled and loaded into the JVM.
-If there is an error during the compilation the call with throw an `CompileException` with the error message in the exception message.
+The method's return value is the class compiled and loaded into the JVM.
+
+If there is an error during the compilation, the call will throw a `CompileException` with the error message in the exception message.
 
 == Fluent API
 
-The fluent API is available when there are more files to be compiled, or when you want to do something other than loading with the class files.
+The fluent API is available when there are more files to be compiled or when you want to do something other than loading with the class files.
 
-The fluent API is chained offering the possible methods in the order they have to be used.
-To demonstrate the use of the API we will use the sample code:
+The fluent API is chained, offering the possible methods only at the locations where you can use them.
+To demonstrate the use of the API, we will use the sample code:
 
 [source,java]
 ----
@@ -140,8 +144,8 @@ To demonstrate the use of the API we will use the sample code:
 
 === 1.  Get the compiler object
 
-To start with the compilation you have to have a `Compiler` object.
-To get that you have to call the
+To start the compilation, you must have a `Compiler` object.
+To get that, you have to call the
 
 [source,java]
 ----
@@ -152,10 +156,10 @@ To get that you have to call the
 === 2.  Add sources
 
 The next step is to add the source files to the compiler object.
-To do that you can specify the sources one-by-one as strings, or you can add directories where the source files are.
-For both of these operations the overloaded method `from()` is used.
+To do that, you can specify the sources one by one as strings, or you can add directories where the source files are.
+The overloaded method `from()` is used for both operations.
 
-To add sources individually you can call
+To add sources individually, you can call
 
 [source,java]
 ----
@@ -163,8 +167,9 @@ To add sources individually you can call
 
 ----
 
-The first argument is the binary name of the class, the second is the actual source code.
-To add multiple sources you can call this method one after the other as many times as you wish.
+The first argument is the binary name of the class.
+The second is the actual source code.
+To add multiple sources, you can call this method one after the other as many times as you wish.
 However, if the sources are in the file system in a directory, you can also call
 
 [source,java]
@@ -173,14 +178,14 @@ However, if the sources are in the file system in a directory, you can also call
 
 ----
 
-In this call you specify only one parameter, a path pointing to the source root.
-This is the directory where the directory structure matching the Java package structure starts.
-If you have multiple source trees on the disk you can have many calls to this method.
-You can also add some of the sources as string, individually and others scanned from the file system.
+In this call, you specify only one parameter, a path pointing to the source root.
+It is the directory where the directory structure matching the Java package structure starts.
+You can have many calls to this method if you have multiple source trees on the disk.
+You can also add some of the sources as strings, individually and others scanned from the file system.
 
 === 3.  Compile
 
-After the sources were loaded the next thing is to compile:
+After the program loaded the sources, the next thing is to compile:
 
 [source,java]
 ----
@@ -193,9 +198,9 @@ They are not loaded as Java classes into the memory yet.
 
 === 4.  Save the byte codes
 
-The next step you can do is, that you can save the byte codes.
-This is not a must.
-If you do not need the compiled byte codes in the file system you can ignore this step.
+The next step you can do is save the byte codes.
+It is not a must.
+You can ignore this step if you do not need the compiled byte codes in the file system.
 
 [source,java]
 ----
@@ -203,18 +208,18 @@ If you do not need the compiled byte codes in the file system you can ignore thi
 
 ----
 
-The argument to this method is the path where the class files will be saved to.
-If the directory does not exists it will be created recursively.
+The argument to this method is the path to where the program will save the class files.
+If the directory does not exist, it will be created recursively.
 It will create all the subdirectories corresponding to the package structure.
 Adding this directory to a standard URL class loader will be able to load these files from the disk.
 
-The return value of this method is `void`, no chainable.
+The return value of this method is `void`, not chainable.
 This method is usually the last action you invoke on a compiler.
 
 === 5.  Stream through the byte codes
 
 Sometimes you do not want to save the byte code to `.class` files.
-You can use the compiler object at this stage to iterate through the compiled codes calling
+You can use the compiler object at this stage to iterate through the compiled codes, calling
 
 [source,java]
 ----
@@ -226,24 +231,24 @@ The return value of the method `stream()` at this point is `Stream<byte[]>`.
 It is up to you how you use these byte arrays.
 
 Many times you may also need the binary name of the class.
-To get the name you can call the static method `getBinaryName()`.
-This is a utility method that gauges the name of the class from the binary representation.
-You can use this method for the purpose for any byte code, not only those compiled with the compiler.
+You can call the static method `getBinaryName()` to get the name.
+It is a utility method that gauges the name of the class from the binary representation.
+You can use this method for any byte code, not only those compiled with the compiler.
 
 NOTE: The `getBinaryName()` implementation supports JVM byte code up to 63, which is Java 19.
 
-The API built into the Java runtime is complex because it is designed to handle several input (Java source code) and output (generated byte code) reading and writing possibilities. This needs the implementation of complex classes that provide the source code and can store the generated byte code.
+The API built into the Java run-time is complex because it is designed to handle several input files (Java source code) and output files (generated byte code) reading and writing possibilities. It needs the implementation of complex classes that provide the source code and store the generated byte code.
 
-To ease the burden this library implements these classes along with a class loader to handle the simple case when you want to compile Java source available during run-time in String objects and you want to load the compiled classes instead generating `.class` files.
+To ease the burden, this library implements these classes along with a class loader to handle the simple case when you want to compile Java source available during run-time in String objects and you want to load the compiled classes instead of generating `.class` files.
 
 === 6.  Load the classes
 
-Applications want not only to compile the Java classes on the fly, but also to load them.
-To do that the aptly named method `load()` can be used.
+Applications want not only to compile the Java classes on the fly but also to load them.
+The aptly named method `load()` can be used to do that.
 
 The method `load()` has two versions.
-One without argument, the otherone needing a class loader.
-The simpler and recommended way is:
+One is without argument; the other needs a class loader.
+The more straightforward and recommended way is:
 
 [source,java]
 ----
@@ -251,24 +256,25 @@ The simpler and recommended way is:
 
 ----
 
-This will load the classes from the memory stored byte code to the JVM.
+It will load the classes from the memory-stored byte code to the JVM.
 This loading will convert the byte codes to `Class` objects.
 
-Using the version of the method `load()` accepting a class loader is a bit tricky.
+Using the version of the method `load()` with a class loader is a bit tricky.
 The class loader has to be able to load the byte code, which was recently created by the compiler.
-It can be achieved saving the byte code or iterating through them calling `stream()` on the compiled object and feeding them into the class loader.
-Writing a class loader is tricky and advanced technique.
+You can achieve it by saving the byte code or iterating through them, calling `stream()` on the compiled object, and feeding them into the class loader.
+Writing a class loader is a tricky and advanced technique.
 
-Note that the method `load()` returns an object, which handles the loaded classes.
+Note that the method `load()` returns an object which handles the loaded classes.
 It is not the compiler object.
 
 === 7.  Get access to the classes
 
-When the classes are loaded your code will want to access some of them.
-Since these classes are created during run-tim they are not available during the compile time of your program.
-You can get access to the class objects from the compilers and from there you should use standard reflection API.
+When the classes are loaded, your code will want to access some of them.
+Since these classes are created during run-time, they are not available during the compile time of your program.
+You can access the class objects from the compilers.
+After that, you can use casting to an interface the class implements, to a superclass, or you can use standard reflection API.
 
-To get a class object by the name you can call
+To get a class object by its name, you can call
 
 [source,java]
 ----
@@ -286,14 +292,14 @@ You can also get a stream of the classes.
 
 ----
 
-Since the method `load()` returned a new object, this time the method `stream()` is a different one.
-This returns a `Stream<Class>` types and not the byte codes.
+Since the method `load()` returned a new object, this time the method `stream()` is different.
+It returns a `Stream<Class>` type and not the byte codes.
 
 === 9.  Reset the compiler
 
-Last, but not least you can reset the compiler.
+Last but not least, you can reset the compiler.
 You may need to reset the compiler to reuse it to compile additional sources.
-In most of the cases it is better to get a new compiler calling
+In most cases, it is better to get a new compiler calling
 
 [source,java]
 ----
@@ -301,15 +307,15 @@ In most of the cases it is better to get a new compiler calling
 
 ----
 
-The only case when the resuse of the compiler is needed when the classes in the new compilation etap need access to the classes in the previous etap.
-Using two different compiler object will compile classes which see the classes of the 'host' code and the classes added to the compiler, but not each other.
-When a comiler object is reset the next compilation round will see all the host classes as well as all the classes compiled previously and added in the current etap.
+The only case when the reuse of the compiler is needed is when the classes in the new compilation etap need access to the classes in the previous etap.
+Using two different compiler objects will compile classes that see the classes of the 'host' code and the classes added to the compiler, but not each other.
+When a compiler object is reset, the subsequent compilation round will see all the host classes and all the classes compiled previously and added in the current etap.
 
-When the compilation starts the compiler will compile all the java classes which were ever added to the compilation.
-It means that older classes already compiled will be compiled again, consuming CPU.
-This is the reason why it is not recommended to reset the compiler object, except when it is absolutely needed.
+When the compilation starts, the compiler will compile all the java classes you ever added to the compilation.
+It means that older classes will be recompiled, consuming CPU.
+It is the reason why it is not recommended to reset the compiler object, except when it is needed.
 
-To reset the compiler you can invoke the method
+To reset the compiler, you can invoke the method
 
 [source,java]
 ----
@@ -317,7 +323,7 @@ To reset the compiler you can invoke the method
 
 ----
 
-You can invoke this method even when the classes were loaded, but also on the compiler object before loading the classes:
+You can invoke this method on the compiler object, even if you used it to create a loaded object:
 
 [source,java]
 ----
@@ -325,7 +331,7 @@ You can invoke this method even when the classes were loaded, but also on the co
 
 ----
 
-The object you get back from both of these calls is the same as the one you can calling
+The object you get back from both of these calls is the same as the one you can call
 
 [source,java]
 ----
@@ -333,20 +339,20 @@ The object you get back from both of these calls is the same as the one you can 
 
 ----
 
-with the exception that it already contains the classes you added to it previously.
+except that it already contains the classes you added to it previously.
 
-WARNING: You can not redefine a class that was already compiled.
-The new source file for an already existing class name will be compiled.
-It will be stored, you will get the new version when calling `stream()`, you can save the new version.
-It will not, however, loaded into memory when you call `load()`.
+WARNING: You can not redefine a class the program has already compiled.
+The program will compile the new source file for an existing class name.
+It will store the byte code; you will get the new version when calling `stream()`; you can save the new version.
+It will not load into memory when you call `load()`.
 The class loader will see that a class under its management is already loaded and skip the loading.
 
 == Support
 
-The project is open source, non commercial, License is Apache v2.0
+The project is open-source; non-commercial; the license is Apache v2.0.
 
-I cannot write that the project is actively developed and supported, because this sentence will remain on the internet long after I died.
-Have faith, if you have a question, suggestion anything, create a ticket on GitHub in the project repo.
-I am a nice guy, I answer all questions, and my motto from the time when I was teaching at TU Budapest is that there is no stupid question, only stupid answer.
-I only realized later that this motto was firing back during the exams, so I did not use it later.
+I cannot write that the project is actively developed and supported because this sentence will remain on the internet long after I die.
+Have faith; if you have a question or suggestion, create a ticket on GitHub in the project repo.
+I am a nice guy, I answer all questions, and my motto from the time I was teaching at TU Budapest is that there is no stupid question, only stupid answer.
+I realized later that this motto was firing back during the exams, so I did not use it later.
 Here, however, there are no exams.

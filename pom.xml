@@ -4,7 +4,7 @@
     <name>SourceBuddy</name>
     <groupId>com.javax0.jamal</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <description>This project provides a simple wrapper around the Java compiler API, which is part of the JDK.</description>
     <licenses>
         <license>
