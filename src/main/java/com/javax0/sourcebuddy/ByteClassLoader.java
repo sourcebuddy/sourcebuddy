@@ -15,7 +15,7 @@ import java.util.Map;
  * @author Peter Verhas
  */
 public class ByteClassLoader extends URLClassLoader {
-    private final Map<String, byte[]> classFilesMap;
+    protected final Map<String, byte[]> classFilesMap;
     private static final System.Logger LOG = System.getLogger(ByteClassLoader.class.getName());
 
     /**

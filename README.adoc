@@ -66,7 +66,7 @@ The Maven central coordinates are:
 [source,xml]
 ----
 <dependency>
-    <groupId>com.javax0.jamal</groupId>
+    <groupId>com.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 </dependency>
@@ -259,13 +259,26 @@ The more straightforward and recommended way is:
 It will load the classes from the memory-stored byte code to the JVM.
 This loading will convert the byte codes to `Class` objects.
 
-Using the version of the method `load()` with a class loader is a bit tricky.
-The class loader has to be able to load the byte code, which was recently created by the compiler.
-You can achieve it by saving the byte code or iterating through them, calling `stream()` on the compiled object, and feeding them into the class loader.
-Writing a class loader is a tricky and advanced technique.
+There is a version `loadHidden()` that will use a special class loader loading the class as a hidden class.
+Hidden classes are defined in link:https://openjdk.org/jeps/371[JEP371].
+They are classes dynamically loaded by the program, but they are hidden in the sense that they do not have name.
+The only way to access them is via reflection using the class object returned by the library (see the next chapter).
+Hidden classes have a technical name, hence you will getsome value if you call `getName()` or `getSimpleName()` on the class.
+On the other hand `getCanonicalName()` will return `null`.
+`getCanonicalName()` returns the format of the name used in the Java source code to refer to the class.
 
-Note that the method `load()` returns an object which handles the loaded classes.
-It is not the compiler object.
+NOTE: You can load many different hidden classes bearing the same name in the source code.
+The Java run-time will delete the name.
+SourceBuddy can also be used to load several versions of a single named class, but you must use different compiler objects.
+The reason: the `Compiler` object identifies the classes using the names you provided for the compilation.
+If there were two classes having the same name, then `loaded.get(className)` would not know which version it has to return.
+
+NOTE: The hidden class loading can also have `ClassOption` vararg arguments.
+These control wether a loaded hidden class becomes attached to the classloader and to be the member of a nest host.
+To accomodate the possibility the method `loadHidden(ClassOption... options)` also accepts these as vararg parameters.
+
+Note that the methods `load()`, and `loadHidden()` return objects which handle the loaded classes.
+These are not the compiler object.
 
 === 7.  Get access to the classes
 
@@ -281,6 +294,19 @@ To get a class object by its name, you can call
         Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
 
 ----
+
+The class also contains a complimentary method, called `newInstance(String className, Class type)`.
+When you call
+
+[source,java]
+----
+        Object f = loaded.newInstance("com.sb.demo.FirstClass",Object.class);"
+----
+
+you will get a new instance of the class.
+The second argument can be `Object.class` or any class of interface the dynamically compiled class extends or implements and the object can be cast to this type.
+This method is generic, the return type will be the given type, there is no need for casting.
+
 
 === 8.  Stream through the class objects
 
@@ -346,6 +372,13 @@ The program will compile the new source file for an existing class name.
 It will store the byte code; you will get the new version when calling `stream()`; you can save the new version.
 It will not load into memory when you call `load()`.
 The class loader will see that a class under its management is already loaded and skip the loading.
+This is a limitation of the Java class loading architecture.
+A class loader cannot unload and reload a class.
+
+You cannot reset a compiler, which was used to load hidden classes.
+Hidden classes have no names.
+The newly defined classes cannot reference them.
+Using a reset compiler object in this case would just increase the CPU load without any added benefit.
 
 == Support
 

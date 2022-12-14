@@ -85,7 +85,7 @@ public class CompilerTest {
     @Test
     @DisplayName("generated class files are saved")
     public void saveClassFiles() throws Exception {
-        final var sut = loadAll();
+        final var sut = loadAll(N);
         final var target = "./target/test-classes";
         sut.compile().saveTo(Paths.get(target));
         for (int i = 1; i <= N; i++) {
@@ -107,7 +107,7 @@ public class CompilerTest {
                 "com.javax0.sourcebuddy.Test2",
                 "com.javax0.sourcebuddy.Test2$Hallo",
                 "com.javax0.sourcebuddy.Test2$1"));
-        final var sut = loadAll();
+        final var sut = loadAll(N);
         sut.compile().load().stream().forEach(klass -> {
             // all that finds were expected
             final var cn = klass.getName();
@@ -117,14 +117,23 @@ public class CompilerTest {
         Assertions.assertEquals(0, classes.size());
     }
 
-    private Fluent.CanCompile loadAll() throws IOException {
+    @Test
+    @DisplayName("get the stream of hidden classes")
+    public void getStreamOfHiddenClasses() throws Exception {
+        final var sut = loadAll(1);
+        sut.compile().loadHidden().stream().forEach(klass -> {
+            Assertions.assertNull( klass.getCanonicalName());
+        });
+    }
+
+    private Fluent.CanCompile loadAll(int n) throws IOException {
         final var source = new ArrayList<String>();
-        for (int i = 1; i <= N; i++) {
+        for (int i = 1; i <= n; i++) {
             source.add(loadJavaSource(format("Test%d.java", i)));
         }
-        var sut = (Fluent.AddSource)Compiler.java();
-        for (int i = 1; i <= N; i++) {
-            sut = sut.from(format("com.javax0.sourcebuddy.Test%d", i), source.get(i - 1));
+        var sut = (Fluent.AddSource) Compiler.java();
+        for (int i = 1; i <= n; i++) {
+            sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1));
         }
         return (Fluent.CanCompile) sut;
     }
@@ -134,7 +143,7 @@ public class CompilerTest {
     void compileAllFromFile() throws Exception {
         final var classes = Compiler.java().from(Paths.get("./src/test/resources/source_tree")).compile().load();
         Class<?> newClass = classes.get("com.javax0.sourcebuddy.Test1");
-        Object object = newClass.getConstructor().newInstance();
+        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1",Object.class);
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
         Assertions.assertEquals("x", s);

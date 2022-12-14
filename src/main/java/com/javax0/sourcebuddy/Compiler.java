@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,8 +48,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
     }
 
     /**
-     * Inner class supporting the fluent API. This class contains the methods invoked after {@link #load()} or
-     * {@link #load(ClassLoader)}.
+     * Inner class supporting the fluent API. This class contains the methods invoked after {@link #load()}.
      */
     public class Loaded {
         Loaded() throws ClassNotFoundException {
@@ -72,6 +73,30 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
          */
         public Class<?> get(final String binaryName) throws ClassNotFoundException {
             return classLoader.loadClass(binaryName);
+        }
+
+        /**
+         * Create and return an instance of the class. The class must have an argument less accessible constructor.
+         *
+         * @param binaryName the binary name of the class
+         * @param ignored    used to casting, usually an interface implemented, or a class extended by the dynamically created class
+         * @param <T>        the type of the object used for casting
+         * @return the loaded object
+         * @throws ClassNotFoundException    if there is no such class
+         * @throws NoSuchMethodException     if the class does not have argumentless constructor
+         * @throws InvocationTargetException if the constructor throws an exception
+         * @throws InstantiationException    if the object cannot be instantiated
+         * @throws IllegalAccessException    if the constructor is not accessible (for example, private)
+         * @throws ClassCastException        if the class is of a different type and cannot be cast to {@code T}
+         */
+        public <T> T newInstance(final String binaryName, Class<T> ignored)
+                throws ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ClassCastException {
+            return (T) get(binaryName).getConstructor().newInstance();
         }
 
         public Stream<Class<?>> stream() {
@@ -122,6 +147,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
 
     @Override
     public Fluent.AddSource reset() {
+        if (classLoader instanceof HiddenByteClassLoader) {
+            throw new RuntimeException("Cannot reset hidden class loading compiler.");
+        }
         state = CompilationState.ADD_SOURCE;
         return this;
     }
@@ -165,8 +193,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                             .map((Path file) -> new StringJavaSource(directory.relativize(file).toString()
                                     .replaceAll("/", ".")
                                     .replaceAll("\\.java$", "")
-                                    , getFileContent(file)))
-                            .collect(Collectors.toList()));
+                                    , getFileContent(file))).toList());
         } catch (RuntimeException re) {
             throwCause(re);
         }
@@ -226,20 +253,6 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
 
 
     /**
-     * Load the compiled classes using the provided class loader. Note that the class loader has to implement the
-     * {@code ClassLoader.findClass(String)}, which needs access to a map of binary names, byte codes. For an
-     * example, you can have a look at the class loader {@link ByteClassLoader}.
-     *
-     * @param classLoader the class loader used to load the classes
-     * @return the fluent api object
-     * @throws ClassNotFoundException if some classes cannot be loaded for whatever reason
-     */
-    public Loaded load(final ClassLoader classLoader) throws ClassNotFoundException {
-        this.classLoader = classLoader;
-        return new Loaded();
-    }
-
-    /**
      * Load the compiled classes using the library provided class loader.
      *
      * @return the fluent api object
@@ -253,7 +266,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 ((ByteClassLoader) classLoader).addByteCodes(classesByteArraysMap());
             }
         }
-        return load(classLoader);
+        return new Loaded();
+    }
+
+    public Loaded loadHidden(MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException {
+        if (classLoader == null) {
+            classLoader = new HiddenByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), classOptions);
+        } else {
+            throw new RuntimeException("Should not reuse hidden loading class loader.");
+        }
+        return new Loaded();
     }
 
     /**
@@ -305,36 +327,31 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
             for (int i = 0; i < constantPoolCount - 1; i++) {
                 int t = is.read();
                 switch (t) {
-                    case 1://utf-8
-                        strings[i] = is.readUTF();
-                        break;
-                    case 5: // Long
-                    case 6: // Double
+                    case 1 ->//utf-8
+                            strings[i] = is.readUTF();
+                    // Long
+                    case 5, 6 -> { // Double
                         read8(is);
                         i++;
-                        break;
-                    case 7: // Class index
-                        classes[i] = is.readUnsignedShort();
-                        break;
-                    case 16: // method type
-                    case 8: // string index
-                        read2(is);
-                        break;
-                    case 3://Integer
-                    case 4: // float
-                    case 9: // field ref
-                    case 10: // method ref
-                    case 11: // interface method ref
-                    case 12: // name and type
-                    case 18: // invoke dynamic
-                        read4(is);
-                        break;
-                    case 15: // method handle
+                    }
+                    case 7 -> // Class index
+                            classes[i] = is.readUnsignedShort();
+                    // method type
+                    case 16, 8 -> // string index
+                            read2(is);
+                    //Integer
+                    // float
+                    // field ref
+                    // method ref
+                    // interface method ref
+                    // name and type
+                    case 3, 4, 9, 10, 11, 12, 18 -> // invoke dynamic
+                            read4(is);
+                    case 15 -> { // method handle
                         read1(is);
                         read2(is);
-                        break;
-                    default:
-                        throw new RuntimeException(format("Invalid constant pool tag %d at position %d", t, i));
+                    }
+                    default -> throw new RuntimeException(format("Invalid constant pool tag %d at position %d", t, i));
                 }
             }
             is.readShort(); // skip access flags
