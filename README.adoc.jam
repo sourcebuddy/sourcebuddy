@@ -68,6 +68,8 @@ The Maven central coordinates are:
 </dependency>
 ----
 
+SourceBuddy requires Java {%pom //project/build/plugins/plugin/configuration/release%}.
+
 == Simple API
 
 You can use the simple API in projects requiring only one source file in a compilation unit.

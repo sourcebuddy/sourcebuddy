@@ -66,11 +66,13 @@ The Maven central coordinates are:
 [source,xml]
 ----
 <dependency>
-    <groupId>com.sourcebuddy</groupId>
+    <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
     <version>1.0.0</version>
 </dependency>
 ----
+
+SourceBuddy requires Java 17.
 
 == Simple API
 
