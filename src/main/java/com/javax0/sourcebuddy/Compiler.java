@@ -315,7 +315,6 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
             if (magic != 0xCAFEBABE) {
                 throw new RuntimeException("Class file header is missing.");
             }
-            Files.write(Paths.get("./dump.class"), byteCode, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
             final var minor = is.readUnsignedShort();
             final var major = is.readUnsignedShort();
             if (major > JVM_VERSION) {

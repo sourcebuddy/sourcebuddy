@@ -68,7 +68,7 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 </dependency>
 ----
 
