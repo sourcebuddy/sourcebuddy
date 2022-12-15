@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -121,7 +122,7 @@ public class CompilerTest {
     @DisplayName("get the stream of hidden classes")
     public void getStreamOfHiddenClasses() throws Exception {
         final var sut = loadAll(1);
-        sut.compile().loadHidden().stream().forEach(klass -> {
+        sut.compile().loadHidden(MethodHandles.lookup()).stream().forEach(klass -> {
             Assertions.assertNull( klass.getCanonicalName());
         });
     }

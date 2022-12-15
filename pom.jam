@@ -10,6 +10,7 @@
 {@define docletArtifact($x)=<docletArtifact>$x</docletArtifact>}
 {@define doclet($x)=<doclet>$x</doclet>}
 {@define doclint($x)=<doclint>$x</doclint>}
+{@define asciidoc:output=pom.xml}
 {project SourceBuddy}
     {GAV :{GROUPID}:SourceBuddy:{VERSION}}
     {description This project provides a simple wrapper around the Java compiler API, which is part of the JDK.}
@@ -104,3 +105,4 @@
     }
 
 {end project}
+{@try {@xmlFormat}}

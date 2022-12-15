@@ -227,9 +227,36 @@ SourceBuddy can also load several versions of a single named class, but you must
 The reason: the `Compiler` object identifies the classes using the names you provided for the compilation.
 If two classes have the same name, then `loaded.get(className)` would not know which version it has to return.
 
-NOTE: The hidden class loading can also have `ClassOption` vararg arguments.
+[NOTE]
+====
+This hidden class loading cannot work without a `Lookup` object.
+This object is used to create the new hidden class.
+The compiled class has to be in the same package as the code that creates the lookup objects.
+
+The recommended way is
+
+* to create a lookup object calling `MethodHandles.lookup()`
+
+* passing the resulting object to the method `loadHidden()` as first argument, and
+
+* have the compiled class in the same package as the code using the `Compiler`.
+
+This may look as simple as
+
+{%sample loadHidden_Lookup%}
+
+For a simpler interface you can also call the metjod without this argument, as
+
+{%sample loadHidden_noLookup%}
+
+====
+
+[NOTE]
+====
+The hidden class loading can also have `ClassOption` vararg arguments.
 These control whether a loaded hidden class becomes attached to the classloader and to be a member of a nest host.
-To accommodate the possibility, the method `loadHidden(ClassOption... options)` also accepts these as vararg parameters.
+To accommodate the possibility, the method `loadHidden(MethodHandles.Lookup lookup, ClassOption... options)` also accepts these as vararg parameters.
+====
 
 Note that the methods `load()` and `loadHidden()` return objects which handle the loaded classes.
 These are not the compiler object.
@@ -309,6 +336,41 @@ You cannot reset a compiler that you used to load hidden classes.
 Hidden classes have no names.
 The newly defined classes cannot reference them.
 In this case, a reset compiler object would increase the CPU load without any added benefit.
+
+== Loading Hidden Classes
+
+This chapter describes some technical details about hidden class loading.
+It gives a reason why it is recommended to pass a lookup object to the method `loadHidden()`.
+Understanding the details here is not necessary to use the library.
+The simple approach is the following:
+
+
+. Use the `loadHidden()` method without a lookup object.
+If the performance is acceptable for your application you are done.
+. Use the version passing a lookup object and test your performance.
+You may also modify the package of the compiled class.
+
+And not the technical details.
+
+When calling `loadHidden()` without a lookup object the class loader will create one.
+It will be from the same package as the compiled class.
+To do that, however, it performs a resource intensive task.
+The `MethodHandles.lookup()` call creates a lookup object for the caller class and package.
+In this case that would be the class loader class' package, which is `{%@snip clPackage%}`.
+This is not likely to be the package your compiled source class is in.
+
+The version of the method `lookup()` that gets the class as argument is not public.
+You cannot create a lookup object for anything else than the caller.
+The class loader has to have a class,
+
+* which is in the same package as the compiled class,
+
+* has a method that creates a lookup object and returns it to be used by the class loader.
+
+To do that the class loader fires up a new `Compiler` object and creates a class implementing the `Supplier` interface.
+Then it calls the `Supplier.get()` method to get access to the lookup object.
+
+Since this process needs a new compiler, source compilation, creating a new class loader object and invoking the created dynamic class object it will take some time that may be significant in your case.
 
 == Support
 

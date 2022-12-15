@@ -269,9 +269,15 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         return new Loaded();
     }
 
+    @Override
     public Loaded loadHidden(MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException {
+        return loadHidden(null, classOptions);
+    }
+
+    @Override
+    public Loaded loadHidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException {
         if (classLoader == null) {
-            classLoader = new HiddenByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), classOptions);
+            classLoader = new HiddenByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), lookup, classOptions);
         } else {
             throw new RuntimeException("Should not reuse hidden loading class loader.");
         }

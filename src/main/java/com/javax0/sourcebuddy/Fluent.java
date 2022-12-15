@@ -24,7 +24,9 @@ public interface Fluent {
 
         Compiler.Loaded load() throws ClassNotFoundException;
 
-        Compiler.Loaded loadHidden(MethodHandles.Lookup.ClassOption ...classOptions) throws ClassNotFoundException;
+        Compiler.Loaded loadHidden(MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException;
+
+        Compiler.Loaded loadHidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException;
 
         void saveTo(Path path);
 
