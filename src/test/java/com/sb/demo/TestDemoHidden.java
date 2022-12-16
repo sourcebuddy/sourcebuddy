@@ -19,7 +19,7 @@ public class TestDemoHidden {
     @Test
     void loadHiddenClassWithLookup() throws Exception {
         // snipline loadHidden_Lookup
-        Compiler.java().from("Z", "class Z{}").compile().loadHidden(MethodHandles.lookup());
+        Compiler.java().from( "package com.sb.demo;class Z{}").compile().loadHidden(MethodHandles.lookup());
     }
 
 }

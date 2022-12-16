@@ -1,61 +1,54 @@
+{%@import samplemacros.jim%}
 {%@define SB=SourceBuddy%}
 = {%SB%}
-
-{%@define numberedSample($X)=[source,java]
-----
-{%#numberLines format="%2d. "
-{%#trimLines
-{%@snip $X%}%}%}
-----%}
-{%@define sample($X)=[source,java]
-----
-{%#trimLines
-{%@snip $X%}%}
-----%}
-
 {%@snip:collect from="src/test/java"%}
 {%@snip:collect from="src/main/java"%}
-{%SB%} is a very simple Java source compiler facade in front of the JDK-provided `javac` compiler.
+
+== Introduction
+
+You can compile Java source code you created dynamically in your Java application.
+Your code can create the source code of one or more Java classes, pass the strings to {%SB%} and use the classes.
+
+{%sample simple_compile%}
+
+{%SB%} is a simple Java source compiler facade in front of the JDK-provided `javac` compiler.
 I designed it for applications creating Java source code on the fly during run-time.
 The JDK API is complex and hard to use.
-You have to implement a `JavaFileManager` and `JavaFileObject`, which is possible, but SourceBuddy does it for you.
-
+You can compile Java code using only the JDK, but using {%SB%}, it is nider.
 Using {%SB%}, you do not need to implement anything except your application logic.
-You get a `Compiler` object calling the `Compiler.java()`, and from there, all you need is
 
-* specify the source code either as Java strings or files,
-* call `compile()`
-* fetch the compiled `.class` files or the loaded classes.
+image::images/compile_flow.svg[]
+You
 
-The library provides a one-call API if your application generates only one Java file.
-You can call the `Compiler.compile(className,sourceCode)` static method that does everything.
-It compiles the source code, loads the class(es) generated from the source, and returns the class.
+. get a `Compiler` object calling the `Compiler.java()`, and from there, all you need is
+. specify the source code either as Java strings or files,
+. call `compile()`
+. fetch the compiled `.class` files as `byte[]`, save to file or the load the classes.
+. use the class and instances (not on the picture).
 
-The following example shows how to use the one-call API:
+{%sample/fluent_api_intro%}
 
-{%numberedSample simple_compile%}
+There is
 
-The variable `source` defines the to-be-compiled code.
-The compilation and loading of the class happen on line 8.
-It is the line using the compilation API.
-The `MyClass` implemented interface, `TestInterface`, is defined in the project's test.
-Classes and interfaces in the host application executing the compilation are available for the Java code to be compiled.
-The instance created using reflection can be cast to the implemented interface (line 9), and line 10 invokes the method defined there.
+* a simple API with one call for simple cases compiling one class only, and
+
+* a still simple, but more versatile fluent API for cases being a bit more complex.
 
 In this document, we will explain the details of how to use the library, including
 
-* dependency parameters,
+* Maven coordinates,
 
 * simple API,
 
 * Fluent API,
 
+* Handling Hidden Classes
+
 * support.
 
-== Dependency Parameters
+== Maven Coordinates
 {%@snip:xml pom=./pom.xml%}
 
-To use the library, it has to be on the classpath for your application, as it is for every library.
 The library is available from Maven central.
 The Maven central coordinates are:
 
@@ -73,7 +66,8 @@ SourceBuddy requires Java {%pom //project/build/plugins/plugin/configuration/rel
 == Simple API
 
 You can use the simple API in projects requiring only one source file in a compilation unit.
-To do that, the class `com.javax0.sourcebuddy.Compiler` defines a static method `compile`.
+To do that, the class `com.javax0.sourcebuddy.Compiler` defines a static method `compile().
+Here is the line from the example displayed in the introduction using this method:
 
 [soure,java]
 ----
@@ -82,28 +76,7 @@ To do that, the class `com.javax0.sourcebuddy.Compiler` defines a static method 
 {%@snip simple_compile%}%}%}
 ----
 
-The method's first parameter is the binary name of the class.
-The second parameter is the string source code of the class.
-
-[NOTE]
-====
-The binary name of a class is the name returned by the method `Class.getName()`.
-A class can have three different names:
-
-* Simple name,
-
-* Canonical name, and
-
-* Binary name, many times referred to as name.
-
-The simple name is the name of the class without any package prefix or enclosing class prefix.
-The canonical name is the name we usually refer to the classes in the Java source unless imported.
-The binary name is the name of how the JVM knows the class.
-With some simplification, the binary name of the class has the `$` in it for anonymous and inner classes.
-Canonical names have `.` between the name of the outer class and the inner classes' names.
-Anonymous classes have no canonical name.
-In other cases, the binary and canonical names are the same.
-====
+The method's parameter is the string source code of the class.
 
 The method's return value is the class compiled and loaded into the JVM.
 
@@ -111,9 +84,8 @@ If there is an error during the compilation, the call will throw a `CompileExcep
 
 == Fluent API
 
-The fluent API is available when there are more files to be compiled or when you want to do something other than loading with the class files.
+The fluent API is available when there are more files to be compiled or when you want to do something other than simply loading with the class files.
 
-The fluent API is chained, offering the possible methods only at the locations where you can use them.
 To demonstrate the use of the API, we will use the sample code:
 
 {%numberedSample/api_doc%}
@@ -122,14 +94,18 @@ To demonstrate the use of the API, we will use the sample code:
 {%#range lines=$N..$N
 {%@snip api_doc%}%}
 ----%}
-{%@counter:define id=STEP format="%d. "%}
 
+In the following sections we wil go through the lines of the code.
+
+{%@counter:define id=STEP format="%d. "%}
+{%@counter:define id=NEXT start=9 %}
 === {%STEP%} Get the compiler object
 
 To start the compilation, you must have a `Compiler` object.
 To get that, you have to call the
 
-{%src 8%}
+{%#define COMPILER_CREATION_LINE={%NEXT%}%}
+{%src {%COMPILER_CREATION_LINE%}%}
 
 === {%STEP%} Add sources
 
@@ -139,14 +115,14 @@ The overloaded method `from()` is used for both operations.
 
 To add sources individually, you can call
 
-{%src 9%}
+{%src {%NEXT%}%}
 
 The first argument is the binary name of the class.
 The second is the actual source code.
 To add multiple sources, you can call this method one after the other multiple times.
 However, if the sources are in the file system in a directory, you can also call
 
-{%src 10%}
+{%src {%NEXT%}%}
 
 In this call, you specify only one parameter, a path pointing to the source root.
 It is the directory where the directory structure matching the Java package structure starts.
@@ -157,7 +133,7 @@ You can also add some of the sources as strings, individually and others scanned
 
 After the program loaded the sources, the next thing is to compile:
 
-{%src 11%}
+{%src {%NEXT%}%}
 
 The compilation generates the bytes codes for the Java source files.
 They are not loaded as Java classes into the memory yet.
@@ -168,7 +144,7 @@ The next step you can do is save the byte codes.
 It is not a must.
 You can ignore this step if you do not need the compiled byte codes in the file system.
 
-{%src 12%}
+{%src {%NEXT%}%}
 
 The argument to this method is the path to where the program will save the class files.
 If the directory does not exist, the code will create it recursively.
@@ -183,7 +159,7 @@ This method is usually the last action you invoke on a compiler.
 Sometimes you do not want to save the byte code to `.class` files.
 You can use the compiler object at this stage to iterate through the compiled codes, calling
 
-{%src 13%}
+{%src {%NEXT%}%}
 
 The return value of the method `stream()` at this point is `Stream<byte[]>`.
 It is up to you how you use these byte arrays.
@@ -200,7 +176,7 @@ The API built into the Java run-time is complex because it was designed to handl
 To ease the burden, this library implements these classes and class loaders to handle the simple case when you want to compile Java source available during run-time in String objects, and you want to load the compiled classes instead of generating `.class` files.
 
 === {%STEP%} Load the classes
-
+{%#define LOAD_THE_CLASSESS_SECTION={%STEP last%}%}
 Applications want not only to compile the Java classes on the fly but also to load them.
 The aptly named method `load()` can be used to do that.
 
@@ -208,30 +184,33 @@ The method `load()` has two versions.
 One is without argument; the other needs a class loader.
 The more straightforward and recommended way is:
 
-{%src 14%}
+{%src {%NEXT%}%}
 
 It will load the classes from the memory-stored byte code to the JVM.
 This loading will convert the byte codes to `Class` objects.
 
-A version named `loadHidden()` will use a special class loader loading the class as a hidden class.
+A version of the method, named `loadHidden()` will use a special class loader loading the class as a hidden class.
 link:https://openjdk.org/jeps/371[JEP371] describes hidden classes.
-They are classes dynamically loaded by the program but are hidden because they do not have a canonical name.
+They are dynamically loaded and hidden because they do not have a canonical name.
 The only way to access them is via reflection using the class object returned by the library (see the next chapter).
 Hidden classes have a technical name; hence you will get some value if you call `getName()` or `getSimpleName()` on the class.
 On the other hand, `getCanonicalName()` will return `null`.
 `getCanonicalName()` returns the format of the name used in the Java source code to refer to the class.
+Since it is `null` you cannot reference these classes.
 
-NOTE: You can load many hidden classes in the source code with the same name.
-The Java run-time will delete the name.
-SourceBuddy can also load several versions of a single named class, but you must use different compiler objects.
+NOTE: Even though these classes "have no name" you still have to give them some name following the `class` keyword.
+This name for the Java run-time is not inetresting.
+You can load many hidden classes in the source code with the same name.
+{%SB%}, on the other hand, needs a distinguising name unique inside one compiler object.
+It can also load several versions of a single named hidden class, but you must use different compiler objects.
 The reason: the `Compiler` object identifies the classes using the names you provided for the compilation.
 If two classes have the same name, then `loaded.get(className)` would not know which version it has to return.
 
 [NOTE]
 ====
-This hidden class loading cannot work without a `Lookup` object.
-This object is used to create the new hidden class.
-The compiled class has to be in the same package as the code that creates the lookup objects.
+The hidden class loading cannot work without a `Lookup` object.
+The lookup object is used to create the new hidden class.
+It is a JDK requirement that the compiled class has to be in the same package as the code that created the lookup objects.
 
 The recommended way is
 
@@ -239,23 +218,25 @@ The recommended way is
 
 * passing the resulting object to the method `loadHidden()` as first argument, and
 
-* have the compiled class in the same package as the code using the `Compiler`.
+* have the compiled class in the same package as the code using the `Compiler` and calling `MethodHandles.lookup()`.
 
 This may look as simple as
 
 {%sample loadHidden_Lookup%}
 
-For a simpler interface you can also call the metjod without this argument, as
+For a simpler interface you can also call the method without this argument, as
 
 {%sample loadHidden_noLookup%}
 
+Calling the method `loadHidden()` without a lookup object is more resouce intensive.
 ====
 
 [NOTE]
 ====
 The hidden class loading can also have `ClassOption` vararg arguments.
 These control whether a loaded hidden class becomes attached to the classloader and to be a member of a nest host.
-To accommodate the possibility, the method `loadHidden(MethodHandles.Lookup lookup, ClassOption... options)` also accepts these as vararg parameters.
+To accommodate the possibility, the methods `loadHidden(ClassOption... options)` and `loadHidden(MethodHandles.Lookup lookup, ClassOption... options)` also accepts these as vararg parameters.
+I see no reason where you would use these with {%SB%}.
 ====
 
 Note that the methods `load()` and `loadHidden()` return objects which handle the loaded classes.
@@ -270,29 +251,24 @@ After that, you can use casting to an interface the class implements, a supercla
 
 To get a class object by its name, you can call
 
-{%src 15%}
+{%src {%NEXT%}%}
 
 The class also contains a complimentary method called `newInstance(String className, Class type)`.
 When you call
 
-[source,java]
-----
-        Object f = loaded.newInstance("com.sb.demo.FirstClass",Object.class);"
-----
+{%src {%NEXT%}%}
 
 you will get a new instance of the class.
-The second argument can be `Object.class` or any class of interface the dynamically compiled class extends or implements, and you can cast the object to this type.
-This method is generic; the return type will be the given type, so casting is not necessary.
-
 
 === {%STEP%} Stream through the class objects
 
 You can also get a stream of the classes.
 
-{%src 16%}
+{%src {%NEXT%}%}
 
-Since the method `load()` returned a new object, the method `stream()` is different this time.
-It returns a `Stream<Class>` type and not the byte codes.
+Note that this is not the same `stream()` method we called after the compilation.
+That method returned a stream of byte arrays.
+This method returns a stream of classes.
 
 === {%STEP%} Reset the compiler
 
@@ -300,11 +276,13 @@ Last but not least, you can reset the compiler.
 You may need to reset the compiler to reuse it to compile additional sources.
 In most cases, it is better to get a new compiler calling
 
-{%src 8%}
+{%src {%COMPILER_CREATION_LINE%}%}
 
-The only case when the reuse of the compiler is needed is when the classes in the new compilation etap need access to the classes in the previous etap.
+The only case when the reuse of the compiler is needed is when the classes in the new compilation etap need access to the classes from previous etaps.
 Using two different compiler objects will compile classes that see the classes of the 'host' code and the classes added to the compiler, but not each other.
 When a compiler object is reset, the subsequent compilation round will see all the host classes and all the classes compiled previously and added in the current etap.
+
+image::images/visibility.svg[]
 
 When the compilation starts, the compiler will compile all the java classes you ever added to the compilation.
 It means that older classes will be recompiled, consuming CPU.
@@ -312,45 +290,50 @@ I recommend not resetting the compiler object except when needed.
 
 To reset the compiler, you can invoke the method
 
-{%src 17%}
+{%src {%NEXT%}%}
+
 
 You can invoke this method on the compiler object, even if you used it to create a loaded object:
 
-{%src 18%}
+{%src {%NEXT%}%}
 
 The object you get back from both of these calls is the same as the one you can call
 
-{%src 8%}
+{%src {%COMPILER_CREATION_LINE%}%}
 
 except that it already contains the classes you added to it previously.
 
 WARNING: You can not redefine a class the program has already compiled.
 The program will compile the new source file for an existing class name.
 It will store the byte code; you will get the new version when calling `stream()`; you can save the new version.
-However, when you call `load()`, it will not load into memory.
-The class loader will see that a class under its management is already loaded and skip the loading.
-It is a limitation of the Java class loading structure.
-A class loader cannot unload and reload a class.
+However, when you call `load()`, it will not load the new version into memory.
+The class loader will see that a class under its management is already loaded and it skips the loading.
+That is how classloaders work in Java.
 
 You cannot reset a compiler that you used to load hidden classes.
 Hidden classes have no names.
-The newly defined classes cannot reference them.
+The newly defined classes cannot reference any of the previous etap's hidden classes.
 In this case, a reset compiler object would increase the CPU load without any added benefit.
+Calling reset on a compiler object that was used to load hidden classes will throw an exception.
 
 == Loading Hidden Classes
 
 This chapter describes some technical details about hidden class loading.
-It gives a reason why it is recommended to pass a lookup object to the method `loadHidden()`.
-Understanding the details here is not necessary to use the library.
-The simple approach is the following:
+In the previous chapter in section {%LOAD_THE_CLASSESS_SECTION%} we discussed the hidden class loading.
+There is a method `loadHidden()` to load the compiled classes hidden.
+The method has a version that accepts a lookup object as argument; and we also said that using it without this argument is more resouce intensive.
 
+In this chapter we will describe why it is the case.
+Understanding the details here is not necessary to use the library.
+
+The simple approach is the following:
 
 . Use the `loadHidden()` method without a lookup object.
 If the performance is acceptable for your application you are done.
 . Use the version passing a lookup object and test your performance.
-You may also modify the package of the compiled class.
+You may also need to select compiled class' package properly.
 
-And not the technical details.
+And now, the technical details.
 
 When calling `loadHidden()` without a lookup object the class loader will create one.
 It will be from the same package as the compiled class.
@@ -361,16 +344,26 @@ This is not likely to be the package your compiled source class is in.
 
 The version of the method `lookup()` that gets the class as argument is not public.
 You cannot create a lookup object for anything else than the caller.
-The class loader has to have a class,
+And still, the class loader needs that for you to load your hidden class.
+
+To do that it has to have a class,
 
 * which is in the same package as the compiled class,
 
 * has a method that creates a lookup object and returns it to be used by the class loader.
 
-To do that the class loader fires up a new `Compiler` object and creates a class implementing the `Supplier` interface.
+The class loader fires up a new `Compiler` object and creates a class implementing the `Supplier` interface.
 Then it calls the `Supplier.get()` method to get access to the lookup object.
+Here is the actual code that does that:
 
-Since this process needs a new compiler, source compilation, creating a new class loader object and invoking the created dynamic class object it will take some time that may be significant in your case.
+{%sample /lookup_creation%}
+
+[NOTE]
+====
+{%@snip lookup_creation_describe%}
+====
+
+Since this process needs a new compiler, source compilation, creating a new class loader object and invoking the created dynamic class object it will take some time that may be significant in some cases.
 
 == Support
 

@@ -1,8 +1,6 @@
 //snipline clPackage filter=package\s(.+);
 package com.javax0.sourcebuddy;
 
-import com.javax0.sourcebuddy.ByteClassLoader;
-
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +35,9 @@ public class HiddenByteClassLoader extends ByteClassLoader {
     public Class<?> loadClass(String binaryName) throws ClassNotFoundException {
         final MethodHandles.Lookup lookup;
         final byte[] byteCode = classFilesMap.get(binaryName);
+        if (byteCode == null) {
+            throw new ClassNotFoundException("Class %s cannot be found.".formatted(binaryName));
+        }
         if (this.lookup == null) {
             final var className = Compiler.getBinaryName(byteCode);
             int lastDot = className.lastIndexOf('.');
@@ -56,7 +57,8 @@ public class HiddenByteClassLoader extends ByteClassLoader {
                     final var packageDot = packageName.length() == 0 ? "" : packageName + ".";
                     final var lookupHelperBinaryName = "A%d".formatted(count.addAndGet(1));
                     try {
-                        lookup = (MethodHandles.Lookup)Compiler.java().from(packageDot + lookupHelperBinaryName, """
+                        // snippet lookup_creation
+                        lookup = (MethodHandles.Lookup) Compiler.java().from(packageDot + lookupHelperBinaryName, """
                                         %s
                                            
                                         import java.util.function.Supplier;
@@ -70,9 +72,20 @@ public class HiddenByteClassLoader extends ByteClassLoader {
                                             }
                                         }
                                         """.formatted(packageLine, lookupHelperBinaryName, lookupHelperBinaryName)).compile().load()
-                                .newInstance(packageDot+lookupHelperBinaryName, Supplier.class).get();
+                                .newInstance(packageDot + lookupHelperBinaryName, Supplier.class).get();
+                        // end snippet
+                        /*this goes into the documentation, update if the code above changes
+                        // snippet lookup_creation_describe
+In the code above the variable `packageLine` contains the `package` keyword and the name of the package and a `;`.
+When the generated class is in the default package then this variable is empty string.
+
+`lookupHelperBinaryName` is the name of the class. This is just the letter `A` and a counter to have a unique name every time.
+It could be a constant.
+This variable is used twice, one for the name of the class and once to create a public constructor.
+                        // end snippet
+                         */
                     } catch (Exception e) {
-                        throw new ClassNotFoundException("%s cannot be loaded".formatted(lookupHelperBinaryName),e);
+                        throw new ClassNotFoundException("%s cannot be loaded".formatted(lookupHelperBinaryName), e);
                     }
                 }
             }

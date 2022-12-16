@@ -13,37 +13,59 @@ import java.nio.file.Paths;
 public class TestDemo {
     public final Double PI = 3.1415926;
     public final Long L = 13L;
-
     // end snippet
+
     @Test
     void oneFileCompile() throws Compiler.CompileException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         // snippet simple_compile
-        String source = "package com.sb.demo;\n" +
-                "\n" +
-                "public class MyClass implements TestInterface{\n" +
-                "    public String a() {\n" +
-                "        return \"x\";\n" +
-                "  }\n" +
-                "}";
-        Class<?> myClassClass = Compiler.compile("com.sb.demo.MyClass", source);
-        TestInterface myClass = (TestInterface)myClassClass.getConstructor().newInstance();
-        String s = myClass.a();
+        String source = """
+                package com.sb.demo;
+                                
+                public class MyClass implements Talker{
+                    @Override
+                    public void say() {
+                        System.out.println("Hello, Buddy!");
+                  }
+                }""";
+        Class<?> myClassClass = Compiler.compile(source);
+        Talker myClass = (Talker) myClassClass.getConstructor().newInstance();
+        myClass.say();
         //end snippet
-        Assertions.assertEquals("x", s);
+    }
+
+
+    @Test
+    void compileFluentApi() throws Exception{
+        String source = """
+                package com.sb.demo;
+                                
+                public class MyClass implements Talker{
+                    @Override
+                    public void say() {
+                        System.out.println("Hello, Buddy!");
+                  }
+                }""";
+        // snippet fluent_api_intro
+        Talker myClass = Compiler.java().from(source).compile().load().newInstance(Talker.class);
+        myClass.say();
+        // end snippet
+
     }
 
     @Test
     void callBack() throws Compiler.CompileException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         // snippet callBack_compile
-        String source = "package com.sb.demo;\n" +
-                "\n" +
-                "public class MyClass {\n" +
-                "    public String a() {\n" +
-                "        TestDemo demo = new TestDemo();\n" +
-                "        return demo.getClass().getPackageName();\n" +
-                "  }\n" +
-                "}";
-        Class<?> myClassClass = Compiler.compile("com.sb.demo.MyClass", source);
+        String source = """
+                package com.sb.demo;
+                                
+                public class MyClass {
+                    public String a() {
+                        TestDemo demo = new TestDemo();
+                        return demo.getClass().getPackageName();
+                  }
+                }
+                """;
+        Class<?> myClassClass = Compiler.compile(source);
         Object myClass = myClassClass.getConstructor().newInstance();
         Method a = myClassClass.getDeclaredMethod("a");
         String s = (String) a.invoke(myClass);
@@ -55,29 +77,32 @@ public class TestDemo {
     @DisplayName("Compiler can be reset to add more files")
     void resetCompiler() throws Compiler.CompileException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         // snippet set_class_loader
-        String sourceFirstClass = "package com.sb.demo;\n" +
-                "\n" +
-                "public class FirstClass {\n" +
-                "    public String a() {\n" +
-                "        return \"x\";\n" +
-                "  }\n" +
-                "}";
-        String sourceSecondClass = "package com.sb.demo;\n" +
-                "\n" +
-                "public class SecondClass {\n" +
-                "    public String a() {\n" +
-                "        return new FirstClass().a();\n" +
-                "  }\n" +
-                "}";
+        String sourceFirstClass = """
+                package com.sb.demo;
+
+                public class FirstClass {
+                    public String a() {
+                        return "x";
+                  }
+                }""";
+        String sourceSecondClass = """
+                package com.sb.demo;
+
+                public class SecondClass {
+                    public String a() {
+                        return new FirstClass().a();
+                  }
+                }""";
         var compiler = Compiler.java()
-                .from("com.sb.demo.FirstClass", sourceFirstClass)
+                .from(sourceFirstClass)
                 .compile().load();
         Class<?> firstClass = compiler.get("com.sb.demo.FirstClass");
+        Assertions.assertNotNull(firstClass);
         var newCompiler = compiler.reset();
         Class<?> secondClass = newCompiler
-                .from("com.sb.demo.SecondClass", sourceSecondClass)
+                .from(sourceSecondClass)
                 .compile()
-                .load().get("com.sb.demo.SecondClass");
+                .load().get("SecondClass");
         Object second = secondClass.getConstructor().newInstance();
         Method a = secondClass.getDeclaredMethod("a");
         String s = (String) a.invoke(second);
@@ -89,13 +114,14 @@ public class TestDemo {
     @Test
     void fluentApiDoc() throws Exception {
         // snippet api_doc
-        String sourceFirstClass = "package com.sb.demo;\n" +
-                "\n" +
-                "public class FirstClass {\n" +
-                "    public String a() {\n" +
-                "        return \"x\";\n" +
-                "  }\n" +
-                "}";
+        String sourceFirstClass = """
+                package com.sb.demo;
+
+                public class FirstClass {
+                    public String a() {
+                        return "x";
+                  }
+                }""";
         final var compiled = Compiler.java()
                 .from("com.sb.demo.FirstClass", sourceFirstClass)
                 .from(Paths.get("src/test/java"))
@@ -104,7 +130,8 @@ public class TestDemo {
         compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));
         final var loaded = compiled.load();
         Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
-        loaded.stream().forEach( klass -> System.out.println(klass.getSimpleName()));
+        Object firstClassInstance = loaded.newInstance("com.sb.demo.FirstClass");
+        loaded.stream().forEach(klass -> System.out.println(klass.getSimpleName()));
         final var compiler = loaded.reset();
         final var sameCompiler = compiled.reset();
         // end snippet

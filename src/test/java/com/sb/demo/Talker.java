@@ -1,7 +1,7 @@
 // snippet TestInterface
 package com.sb.demo;
 
-public interface TestInterface {
-    String a();
+public interface Talker {
+    void say();
 }
 // end snippet

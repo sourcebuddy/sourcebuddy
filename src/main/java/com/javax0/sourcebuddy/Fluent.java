@@ -8,9 +8,13 @@ import java.util.stream.Stream;
 public interface Fluent {
 
     interface AddSource {
-        CanCompile from(Path path) throws IOException;
+        CanCompile from(Path path) throws IOException, ClassNotFoundException;
+
+        CanCompile from(String binary, Path path) throws IOException;
 
         CanCompile from(String name, String source);
+
+        CanCompile from(String source) throws ClassNotFoundException;
     }
 
     interface CanCompile extends AddSource {

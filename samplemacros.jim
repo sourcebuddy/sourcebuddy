@@ -1,0 +1,11 @@
+{@define numberedSample($X)=[source,java]
+----
+{#numberLines format="%2d. "
+{#trimLines
+{@snip $X}}}
+----}
+{@define sample($X)=[source,java]
+----
+{#trimLines
+{@snip $X}}
+----}

@@ -9,6 +9,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,12 +28,47 @@ public class CompilerTest {
         }
     }
 
+    private Path getResourcePath(String name) {
+        return Paths.get(this.getClass().getResource(name).getPath());
+    }
+
     @Test
     @DisplayName("source code compiles")
-    public void goodSimpleCode()
-            throws Exception {
+    public void goodSimpleCode() throws Exception {
         final String source = loadJavaSource("Test1.java");
         Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test1", source);
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("source code compiles providing the path to the file")
+    public void goodSimpleCodeWithPathToFile() throws Exception {
+        Class<?> newClass = Compiler.java().from(getResourcePath("Test1.java")).compile().load().get();
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("source code compiles providing the path to the file with explicit name")
+    public void goodSimpleCodeWithPathToFileAndName() throws Exception {
+        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1",getResourcePath("Test1.java")).compile().load().get();
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("source code compiles without explicitly specifying the name")
+    public void goodSimpleCodeWithoutName()
+            throws Exception {
+        final String source = loadJavaSource("Test1.java");
+        Class<?> newClass = Compiler.compile(source);
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -54,7 +91,19 @@ public class CompilerTest {
         Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test2", source);
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("method");
-        int i = (int) f.invoke(object, null);
+        int i = (int) f.invoke(object, (Object[]) null);
+        Assertions.assertEquals(1, i);
+    }
+
+    @Test
+    @DisplayName("source code with subclasses  without explicitly specifying the name works fine")
+    public void sourceCodeWithSubclassWithoutName()
+            throws Exception {
+        final String source = loadJavaSource("Test2.java");
+        Class<?> newClass = Compiler.compile(source);
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("method");
+        int i = (int) f.invoke(object, (Object[]) null);
         Assertions.assertEquals(1, i);
     }
 
@@ -67,9 +116,78 @@ public class CompilerTest {
                 Compiler.java().from("com.javax0.sourcebuddy.Test2", source).compile().load().get("com.javax0.sourcebuddy.Test2");
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("method");
-        int i = (int) f.invoke(object, null);
+        int i = (int) f.invoke(object, (Object[]) null);
         Assertions.assertEquals(1, i);
     }
+
+    @Test
+    @DisplayName("source code with subclasses works fine using fluent api and get no arg provides top level class")
+    public void usingFluentApiGetNoArg() throws Exception {
+        final String source = loadJavaSource("Test2.java");
+        Class<?> newClass =
+                Compiler.java().from(source).compile().load().get();
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("method");
+        int i = (int) f.invoke(object, (Object[]) null);
+        Assertions.assertEquals(1, i);
+    }
+
+    @Test
+    @DisplayName("get w/o args will throw when there are multiple compiled classes")
+    public void usingFluentApiGetNoArgThows() throws Exception {
+        final String source1 = loadJavaSource("Test1.java");
+        final String source2 = loadJavaSource("Test2.java");
+        Assertions.assertThrows(ClassNotFoundException.class, () ->
+                Compiler.java().from(source1).from(source2).compile().load().get());
+    }
+
+    @Test
+    @DisplayName("More sources can be added after the compiled is reset")
+    public void compilerCanReset() throws Exception {
+        final String source1 = loadJavaSource("Test1.java");
+        final String source2 = loadJavaSource("Test2.java");
+        final var compiler = Compiler.java().from(source1).compile().load();
+        final var classes = compiler.reset().from(source2).compile().load();
+        final var newClass = classes.get("Test2");
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("method");
+        int i = (int) f.invoke(object, (Object[]) null);
+        Assertions.assertEquals(1, i);
+    }
+
+    @Test
+    @DisplayName("Compiler cannot reset when the classes are loaded hidden")
+    public void compilerHiddenCannotReset() throws Exception {
+        final String source1 = loadJavaSource("Test1.java");
+        final String source2 = loadJavaSource("Test2.java");
+        final var compiler = Compiler.java().from(source1).compile().loadHidden();
+        Assertions.assertThrows(RuntimeException.class, () -> compiler.reset().from(source2));
+    }
+
+    @Test
+    @DisplayName("There is an IO exception if the source code file cannot be found")
+    void testLoadFailure() throws Exception {
+        Assertions.assertThrows(NoSuchFileException.class, () ->
+                Compiler.java().from(Paths.get("nonexistent_java_directory")));
+    }
+
+    @Test
+    @DisplayName("Cannot find the name when there is no package")
+    void noPackageNoNameFail() throws Exception {
+        Assertions.assertThrows(ClassNotFoundException.class, () ->
+                Compiler.java().from("class Z{}"));
+    }
+
+    @Test
+    @DisplayName("Cannot add source file after compilation")
+    void cannotAddSourceFileAfterCompilation() throws Exception {
+        final var compiler = Compiler.java().from("Z", "class Z{}");
+        compiler.compile();
+
+        Assertions.assertThrows(RuntimeException.class, () ->
+                compiler.from("X", "class X{}"));
+    }
+
 
     @Test
     @DisplayName("after compilation the 'get' can give a \"normal\", not recently compiled class as well")
@@ -123,7 +241,7 @@ public class CompilerTest {
     public void getStreamOfHiddenClasses() throws Exception {
         final var sut = loadAll(1);
         sut.compile().loadHidden(MethodHandles.lookup()).stream().forEach(klass -> {
-            Assertions.assertNull( klass.getCanonicalName());
+            Assertions.assertNull(klass.getCanonicalName());
         });
     }
 
@@ -144,7 +262,7 @@ public class CompilerTest {
     void compileAllFromFile() throws Exception {
         final var classes = Compiler.java().from(Paths.get("./src/test/resources/source_tree")).compile().load();
         Class<?> newClass = classes.get("com.javax0.sourcebuddy.Test1");
-        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1",Object.class);
+        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1", Object.class);
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
         Assertions.assertEquals("x", s);
