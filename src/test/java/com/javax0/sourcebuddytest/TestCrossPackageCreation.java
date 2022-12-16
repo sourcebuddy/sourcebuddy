@@ -4,8 +4,6 @@ import com.javax0.sourcebuddy.Compiler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.lang.invoke.MethodHandles;
-
 public class TestCrossPackageCreation {
     public interface Hello {
         void hello();

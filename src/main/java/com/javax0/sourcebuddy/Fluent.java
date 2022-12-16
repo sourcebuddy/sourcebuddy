@@ -5,12 +5,13 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+@SuppressWarnings("unused")
 public interface Fluent {
 
     interface AddSource {
         CanCompile from(Path path) throws IOException, ClassNotFoundException;
 
-        CanCompile from(String binary, Path path) throws IOException;
+        CanCompile from(String binary, Path path);
 
         CanCompile from(String name, String source);
 

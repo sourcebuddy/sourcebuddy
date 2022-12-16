@@ -28,8 +28,8 @@ public class HiddenByteClassLoader extends ByteClassLoader {
         this.lookup = lookup;
     }
 
-    private static Map<String, MethodHandles.Lookup> lookups = new ConcurrentHashMap<>();
-    private static AtomicLong count = new AtomicLong(0);
+    private static final Map<String, MethodHandles.Lookup> lookups = new ConcurrentHashMap<>();
+    private static final AtomicLong count = new AtomicLong(0);
 
     @Override
     public Class<?> loadClass(String binaryName) throws ClassNotFoundException {
@@ -50,30 +50,29 @@ public class HiddenByteClassLoader extends ByteClassLoader {
                 packageName = className.substring(0, lastDot);
                 packageLine = "package %s;".formatted(packageName);
             }
-            synchronized (lookups) {
-                if (lookups.containsKey(packageName)) {
-                    lookup = lookups.get(packageName);
-                } else {
-                    final var packageDot = packageName.length() == 0 ? "" : packageName + ".";
-                    final var lookupHelperBinaryName = "A%d".formatted(count.addAndGet(1));
-                    try {
-                        // snippet lookup_creation
-                        lookup = (MethodHandles.Lookup) Compiler.java().from(packageDot + lookupHelperBinaryName, """
-                                        %s
-                                           
-                                        import java.util.function.Supplier;
-                                        import java.lang.invoke.MethodHandles;          
-                                                                    
-                                        public class %s implements Supplier<MethodHandles.Lookup> {
-                                            public %s(){}
-                                            @Override
-                                            public MethodHandles.Lookup get() {
-                                                return MethodHandles.lookup();
-                                            }
+            if (lookups.containsKey(packageName)) {
+                lookup = lookups.get(packageName);
+            } else {
+                final var packageDot = packageName.length() == 0 ? "" : packageName + ".";
+                final var lookupHelperBinaryName = "A%d".formatted(count.addAndGet(1));
+                try {
+                    // snippet lookup_creation
+                    lookup = (MethodHandles.Lookup) Compiler.java().from(packageDot + lookupHelperBinaryName, """
+                                    %s
+                                       
+                                    import java.util.function.Supplier;
+                                    import java.lang.invoke.MethodHandles;
+                                                                
+                                    public class %s implements Supplier<MethodHandles.Lookup> {
+                                        public %s(){}
+                                        @Override
+                                        public MethodHandles.Lookup get() {
+                                            return MethodHandles.lookup();
                                         }
-                                        """.formatted(packageLine, lookupHelperBinaryName, lookupHelperBinaryName)).compile().load()
-                                .newInstance(packageDot + lookupHelperBinaryName, Supplier.class).get();
-                        // end snippet
+                                    }
+                                    """.formatted(packageLine, lookupHelperBinaryName, lookupHelperBinaryName)).compile().load()
+                            .newInstance(packageDot + lookupHelperBinaryName, Supplier.class).get();
+                    // end snippet
                         /*this goes into the documentation, update if the code above changes
                         // snippet lookup_creation_describe
 In the code above the variable `packageLine` contains the `package` keyword and the name of the package and a `;`.
@@ -84,9 +83,13 @@ It could be a constant.
 This variable is used twice, one for the name of the class and once to create a public constructor.
                         // end snippet
                          */
-                    } catch (Exception e) {
-                        throw new ClassNotFoundException("%s cannot be loaded".formatted(lookupHelperBinaryName), e);
+                    synchronized (lookups) {
+                        if (!lookups.containsKey(packageName)) {
+                            lookups.put(packageName, lookup);
+                        }
                     }
+                } catch (Exception e) {
+                    throw new ClassNotFoundException("%s cannot be loaded".formatted(lookupHelperBinaryName), e);
                 }
             }
         } else {

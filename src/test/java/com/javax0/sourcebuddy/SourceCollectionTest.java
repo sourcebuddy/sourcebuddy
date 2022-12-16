@@ -17,7 +17,7 @@ public class SourceCollectionTest {
         final var sut = Compiler.java().from(Paths.get("./src/test/resources/file_collect_test"));
         final var sourcesField = Compiler.class.getDeclaredField("sources");
         sourcesField.setAccessible(true);
-        final var sources = (List<StringJavaSource>)sourcesField.get(sut);
+        @SuppressWarnings("unchecked") final var sources = (List<StringJavaSource>)sourcesField.get(sut);
         Assertions.assertEquals(List.of("DefaultPackage",
                 "com.verhas.Another",
                 "com.javax0.sourcebuddy.Main",

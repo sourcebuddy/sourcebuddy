@@ -14,7 +14,7 @@
 {project SourceBuddy}
     {GAV :{GROUPID}:SourceBuddy:{VERSION}}
     {description This project provides a simple wrapper around the Java compiler API, which is part of the JDK.}
-    {license|The Apache License, Version 2.0|http://www.apache.org/licenses/LICENSE-2.0.txt}
+    {license|The Apache License, Version 2.0|https://www.apache.org/licenses/LICENSE-2.0.txt}
     {developer|Peter Verhas|peter@verhas.com}
     {github|verhas|SourceBuddy}
 

@@ -18,7 +18,7 @@ $x
 --
 --------------------------------------------------------------------------------------------------------------------
 
-VERSION=1.1.0                    -- https://repo.maven.apache.org/maven2/com/javax0/SourceBuddy/
+VERSION=1.1.1-SNAPSHOT                    -- https://repo.maven.apache.org/maven2/com/javax0/SourceBuddy/
 
 GROUPID=com.javax0.sourcebuddy            -- the project groupId.
 
@@ -45,6 +45,6 @@ MAVEN_SOURCE_PLUGIN_VERSION=3.2.1          -- https://repo.maven.apache.org/mave
 JUPITER_VERSION=5.9.0                      -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-api
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-engine
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-params
-MOCKITO_VERSION=4.6.1                      -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core/
+MOCKITO_VERSION=4.8.0                      -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core/
 JAMAL_VERSION=1.12.3                       -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
 }

@@ -29,6 +29,7 @@ public class CompilerTest {
     }
 
     private Path getResourcePath(String name) {
+        //noinspection ConstantConditions
         return Paths.get(this.getClass().getResource(name).getPath());
     }
 
@@ -166,14 +167,14 @@ public class CompilerTest {
 
     @Test
     @DisplayName("There is an IO exception if the source code file cannot be found")
-    void testLoadFailure() throws Exception {
+    void testLoadFailure() {
         Assertions.assertThrows(NoSuchFileException.class, () ->
                 Compiler.java().from(Paths.get("nonexistent_java_directory")));
     }
 
     @Test
     @DisplayName("Cannot find the name when there is no package")
-    void noPackageNoNameFail() throws Exception {
+    void noPackageNoNameFail() {
         Assertions.assertThrows(ClassNotFoundException.class, () ->
                 Compiler.java().from("class Z{}"));
     }
@@ -240,9 +241,7 @@ public class CompilerTest {
     @DisplayName("get the stream of hidden classes")
     public void getStreamOfHiddenClasses() throws Exception {
         final var sut = loadAll(1);
-        sut.compile().loadHidden(MethodHandles.lookup()).stream().forEach(klass -> {
-            Assertions.assertNull(klass.getCanonicalName());
-        });
+        sut.compile().loadHidden(MethodHandles.lookup()).stream().forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
     }
 
     private Fluent.CanCompile loadAll(int n) throws IOException {

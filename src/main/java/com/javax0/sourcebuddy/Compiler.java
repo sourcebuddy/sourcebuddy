@@ -116,6 +116,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 InstantiationException,
                 IllegalAccessException,
                 ClassCastException {
+            //noinspection unchecked
             return (T) get(name).getConstructor().newInstance();
         }
 
@@ -163,6 +164,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 InstantiationException,
                 IllegalAccessException,
                 ClassCastException {
+            //noinspection unchecked
             return (T) get().getConstructor().newInstance();
         }
 
@@ -338,9 +340,8 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @param binaryName the binary name of the class
      * @param file       the file that contains the source code
      * @return the fluent object for the further call chaining
-     * @throws IOException when the file cannot be read
      */
-    public Fluent.CanCompile from(final String binaryName, final Path file) throws IOException {
+    public Fluent.CanCompile from(final String binaryName, final Path file) {
         final var source = getFileContent(file);
         sources.add(new StringJavaSource(binaryName, source));
         return this;
@@ -475,7 +476,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
             if (magic != 0xCAFEBABE) {
                 throw new RuntimeException("Class file header is missing.");
             }
-            final var minor = is.readUnsignedShort();
+            @SuppressWarnings("unused") final var minor = is.readUnsignedShort();
             final var major = is.readUnsignedShort();
             if (major > JVM_VERSION) {
                 throw new RuntimeException(String.format("This version support Java up to version %d.", JAVA_VERSION));
