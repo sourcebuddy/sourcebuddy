@@ -84,6 +84,7 @@
 
 	{dependencies
 	    {dependency|org.mockito|mockito-core|{MOCKITO_VERSION}|test}
+	    {dependency|com.javax0.jamal|jamal-all|{JAMAL_VERSION}|test}
 	    {@for MODULE in (api,engine,params)={dependency :org.junit.jupiter:junit-jupiter-MODULE:{JUPITER_VERSION}:test}}
 	}
 

@@ -63,7 +63,7 @@
                     <docletArtifact>
                         <groupId>com.javax0.jamal</groupId>
                         <artifactId>jamal-doclet</artifactId>
-                        <version>1.12.3</version>
+                        <version>1.12.4</version>
                     </docletArtifact>
                     <additionalOptions>
                         <additionalOption>--source-root</additionalOption>
@@ -75,7 +75,7 @@
                             <tagletArtifact>
                                 <groupId>com.javax0.jamal</groupId>
                                 <artifactId>jamal-doclet</artifactId>
-                                <version>1.12.3</version>
+                                <version>1.12.4</version>
                             </tagletArtifact>
                         </taglet>
                     </taglets>
@@ -122,6 +122,12 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>4.8.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.javax0.jamal</groupId>
+            <artifactId>jamal-all</artifactId>
+            <version>1.12.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
