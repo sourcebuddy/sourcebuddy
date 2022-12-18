@@ -1,0 +1,18 @@
+{@import samplemacros.jim}
+== {SB} Release history
+{@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
+
+=== {RELEASE 1.1.1}
+
+Fix to cache some resources.
+Prior version had a bug not storing created methods handles in the cache.
+
+=== {RELEASE 1.1.0}
+
+Fix to work with hidden classes properly and also adds extra APU.
+
+=== {RELEASE 1.0.0}
+
+Initial release.
+Support hidden classes, but it does not work due to a bug.
+

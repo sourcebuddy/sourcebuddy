@@ -1,5 +1,4 @@
 
-
 = SourceBuddy
 
 
@@ -77,11 +76,13 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.1.1</version>
 </dependency>
 ----
 
 SourceBuddy requires Java 17.
+
+Documentation on the different link:RELEASES.adoc[releases].
 
 == Simple API
 

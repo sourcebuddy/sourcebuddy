@@ -9,3 +9,4 @@
 {#trimLines
 {@snip $X}}
 ----}
+{@define SB=SourceBuddy}
