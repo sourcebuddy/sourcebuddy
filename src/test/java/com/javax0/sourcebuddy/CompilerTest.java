@@ -57,7 +57,7 @@ public class CompilerTest {
     @Test
     @DisplayName("source code compiles providing the path to the file with explicit name")
     public void goodSimpleCodeWithPathToFileAndName() throws Exception {
-        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1",getResourcePath("Test1.java")).compile().load().get();
+        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1", getResourcePath("Test1.java")).compile().load().get();
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -196,7 +196,7 @@ public class CompilerTest {
     @Test
     @DisplayName("generated class files are saved")
     public void saveClassFiles() throws Exception {
-        final var sut = loadAll(N);
+        final var sut = loadTestSources();
         final var target = "./target/test-classes";
         sut.compile().saveTo(Paths.get(target));
         for (int i = 1; i <= N; i++) {
@@ -218,7 +218,7 @@ public class CompilerTest {
                 "com.javax0.sourcebuddy.Test2",
                 "com.javax0.sourcebuddy.Test2$Hallo",
                 "com.javax0.sourcebuddy.Test2$1"));
-        final var sut = loadAll(N);
+        final var sut = loadTestSources();
         sut.compile().load().stream().forEach(klass -> {
             // all that finds were expected
             final var cn = klass.getName();
@@ -231,18 +231,23 @@ public class CompilerTest {
     @Test
     @DisplayName("get the stream of hidden classes")
     public void getStreamOfHiddenClasses() throws Exception {
-        final var sut = loadAll(1);
-        sut.compile().load().stream().forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
+        Compiler.java()
+                .from(loadJavaSource("Test1.java"))
+                .hidden(MethodHandles.lookup())
+                .compile()
+                .load()
+                .stream()
+                .forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
     }
 
-    private Fluent.CanCompile loadAll(int n) throws IOException {
+    private Fluent.CanCompile loadTestSources() throws IOException {
         final var source = new ArrayList<String>();
-        for (int i = 1; i <= n; i++) {
+        for (int i = 1; i <= CompilerTest.N; i++) {
             source.add(loadJavaSource(format("Test%d.java", i)));
         }
         var sut = (Fluent.AddSource) Compiler.java();
-        for (int i = 1; i <= n; i++) {
-            sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1)).hidden(MethodHandles.lookup());
+        for (int i = 1; i <= CompilerTest.N; i++) {
+            sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1));
         }
         return (Fluent.CanCompile) sut;
     }
