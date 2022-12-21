@@ -2,6 +2,15 @@
 == {SB} Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
 
+=== {RELEASE 2.0.0}
+
+Major restructuring of the class loading structure.
+With this release hidden and non-hidden classes can be mixed.
+There is no more `loadHidden()` method supported.
+Instead, you can call `hidden()` for each added source separately.
+
+Since this change, removing a method from the API? is not backward compatible, this is a new major version.
+
 === {RELEASE 1.1.1}
 
 Fix to cache some resources.

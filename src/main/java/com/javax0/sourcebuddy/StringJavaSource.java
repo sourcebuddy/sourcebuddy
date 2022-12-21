@@ -1,6 +1,7 @@
 package com.javax0.sourcebuddy;
 
 import javax.tools.SimpleJavaFileObject;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 
 /**
@@ -14,6 +15,13 @@ public class StringJavaSource extends SimpleJavaFileObject {
 
     final String binaryName;
 
+    /**
+     * To be loaded as a hidden class. By default, classes are loaded by the class loader the normal way.
+     */
+    boolean isHidden = false;
+
+    MethodHandles.Lookup.ClassOption[] classOptions = new MethodHandles.Lookup.ClassOption[0];
+    MethodHandles.Lookup lookup = null;
 
     private static String simpleNameFrom(String canonicalClassName) {
         return canonicalClassName
@@ -24,7 +32,7 @@ public class StringJavaSource extends SimpleJavaFileObject {
      * Constructs a new JavaSourceFromString.
      *
      * @param binaryName the name of the compilation unit represented by this file object
-     * @param code          the source code for the compilation unit represented by this file object
+     * @param code       the source code for the compilation unit represented by this file object
      */
     StringJavaSource(final String binaryName, final String code) {
         super(URI.create("string:///" + simpleNameFrom(binaryName).replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);

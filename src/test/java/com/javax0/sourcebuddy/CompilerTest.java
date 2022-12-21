@@ -28,9 +28,8 @@ public class CompilerTest {
         }
     }
 
-    private Path getResourcePath(String name) {
-        //noinspection ConstantConditions
-        return Paths.get(this.getClass().getResource(name).getPath());
+    private Path getTest1ResourcePath() {
+        return Paths.get(this.getClass().getResource("Test1.java").getPath());
     }
 
     @Test
@@ -47,7 +46,7 @@ public class CompilerTest {
     @Test
     @DisplayName("source code compiles providing the path to the file")
     public void goodSimpleCodeWithPathToFile() throws Exception {
-        Class<?> newClass = Compiler.java().from(getResourcePath("Test1.java")).compile().load().get();
+        Class<?> newClass = Compiler.java().from(getTest1ResourcePath()).compile().load().get();
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -57,7 +56,7 @@ public class CompilerTest {
     @Test
     @DisplayName("source code compiles providing the path to the file with explicit name")
     public void goodSimpleCodeWithPathToFileAndName() throws Exception {
-        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1",getResourcePath("Test1.java")).compile().load().get();
+        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1", getTest1ResourcePath()).compile().load().get();
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -157,15 +156,6 @@ public class CompilerTest {
     }
 
     @Test
-    @DisplayName("Compiler cannot reset when the classes are loaded hidden")
-    public void compilerHiddenCannotReset() throws Exception {
-        final String source1 = loadJavaSource("Test1.java");
-        final String source2 = loadJavaSource("Test2.java");
-        final var compiler = Compiler.java().from(source1).compile().loadHidden();
-        Assertions.assertThrows(RuntimeException.class, () -> compiler.reset().from(source2));
-    }
-
-    @Test
     @DisplayName("There is an IO exception if the source code file cannot be found")
     void testLoadFailure() {
         Assertions.assertThrows(NoSuchFileException.class, () ->
@@ -205,7 +195,7 @@ public class CompilerTest {
     @Test
     @DisplayName("generated class files are saved")
     public void saveClassFiles() throws Exception {
-        final var sut = loadAll(N);
+        final var sut = loadTestSources();
         final var target = "./target/test-classes";
         sut.compile().saveTo(Paths.get(target));
         for (int i = 1; i <= N; i++) {
@@ -227,7 +217,7 @@ public class CompilerTest {
                 "com.javax0.sourcebuddy.Test2",
                 "com.javax0.sourcebuddy.Test2$Hallo",
                 "com.javax0.sourcebuddy.Test2$1"));
-        final var sut = loadAll(N);
+        final var sut = loadTestSources();
         sut.compile().load().stream().forEach(klass -> {
             // all that finds were expected
             final var cn = klass.getName();
@@ -240,17 +230,22 @@ public class CompilerTest {
     @Test
     @DisplayName("get the stream of hidden classes")
     public void getStreamOfHiddenClasses() throws Exception {
-        final var sut = loadAll(1);
-        sut.compile().loadHidden(MethodHandles.lookup()).stream().forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
+        Compiler.java()
+                .from(loadJavaSource("Test1.java"))
+                .hidden(MethodHandles.lookup())
+                .compile()
+                .load()
+                .stream()
+                .forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
     }
 
-    private Fluent.CanCompile loadAll(int n) throws IOException {
+    private Fluent.CanCompile loadTestSources() throws IOException {
         final var source = new ArrayList<String>();
-        for (int i = 1; i <= n; i++) {
+        for (int i = 1; i <= CompilerTest.N; i++) {
             source.add(loadJavaSource(format("Test%d.java", i)));
         }
         var sut = (Fluent.AddSource) Compiler.java();
-        for (int i = 1; i <= n; i++) {
+        for (int i = 1; i <= CompilerTest.N; i++) {
             sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1));
         }
         return (Fluent.CanCompile) sut;
@@ -261,10 +256,27 @@ public class CompilerTest {
     void compileAllFromFile() throws Exception {
         final var classes = Compiler.java().from(Paths.get("./src/test/resources/source_tree")).compile().load();
         Class<?> newClass = classes.get("com.javax0.sourcebuddy.Test1");
-        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1", Object.class);
+        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1");
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
         Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("Compile one class and load the object")
+    void loadOne() throws Exception {
+        final Object o = Compiler.java().from("package A;public class A{}").compile().load().newInstance();
+        Assertions.assertNotNull(o);
+    }
+
+    @Test
+    @DisplayName("Redefine class is not possible")
+    void redefineAsHidden() throws Exception {
+        final var compiler = Compiler.java();
+        compiler.from("A", "class A { void hi(){} } ").compile().load().get();
+        compiler.reset();
+        Assertions.assertThrows(Compiler.CompileException.class,
+                () -> compiler.from("A", "class A { void lo(){} } ").compile().load().get());
     }
 
 }

@@ -9,4 +9,9 @@
 {#trimLines
 {@snip $X}}
 ----}
+{@define srcX($N,$SNIP)=[source,java]
+----
+{#range lines=$N..$N
+{@snip $SNIP}}
+----}
 {@define SB=SourceBuddy}

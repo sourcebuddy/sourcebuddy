@@ -168,6 +168,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
             return (T) get().getConstructor().newInstance();
         }
 
+        public Object newInstance()
+                throws ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ClassCastException {
+            return get().getConstructor().newInstance();
+        }
+
         /**
          * Get the compiled and loaded class as a stream.
          *
@@ -238,9 +248,6 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
 
     @Override
     public Fluent.AddSource reset() {
-        if (classLoader instanceof HiddenByteClassLoader) {
-            throw new RuntimeException("Cannot reset hidden class loading compiler.");
-        }
         state = CompilationState.ADD_SOURCE;
         return this;
     }
@@ -253,6 +260,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
 
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("(?:\\W|^|\\s)package\\s+(.*?);");
     private static final Pattern CLASS_PATTERN = Pattern.compile("(?:\\W|\\s)class\\s+([\\w.]+)(?:\\W|\\s)");
+
 
     /**
      * Add Java source to the compilation task. In this version you do not need to specify the name of the class.
@@ -371,6 +379,28 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         }
     }
 
+    public Fluent.CanCompile hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
+        if (sources.size() == 0) {
+            throw new RuntimeException("There is no source added, this is an internal error.");
+        }
+        final var lastSource = sources.get(sources.size() - 1);
+        lastSource.isHidden = true;
+        lastSource.lookup = lookup;
+        lastSource.classOptions = classOptions;
+        return this;
+
+    }
+
+    /**
+     * Signal that the last source added should be loaded as a hidden class after the compilation.
+     *
+     * @return the fluent object for the further call chaining
+     */
+    @Override
+    public Fluent.CanCompile hidden(MethodHandles.Lookup.ClassOption... classOptions) {
+        return hidden(null, classOptions);
+    }
+
     /**
      * Compile the collected sources.
      *
@@ -406,6 +436,26 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         return classesByteArraysMap().values().stream();
     }
 
+    /**
+     * Get the byte code of the compiled class.
+     * This method can be called if there is only one single class compiled.
+     *
+     * @return the byte code of the compiled class
+     * @throws ClassNotFoundException if there was no class compiled or more than one was compiled
+     */
+    public byte[] get() throws ClassNotFoundException {
+        final var map = classesByteArraysMap();
+        if (map.size() == 0) {
+            throw new ClassNotFoundException("There was no class compiled.");
+        }
+        if (map.size() > 1) {
+            throw new ClassNotFoundException("There were many classes compiled, you must specify the name which one you want to get.");
+        }
+        for( final var e : map.entrySet()){
+            return e.getValue();
+        }
+        return null;
+    }
 
     /**
      * Load the compiled classes using the library provided class loader.
@@ -415,26 +465,11 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      */
     public Loaded load() throws ClassNotFoundException {
         if (classLoader == null) {
-            classLoader = new ByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap());
+            classLoader = new ByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), sources);
         } else {
             if (classLoader instanceof ByteClassLoader) {
-                ((ByteClassLoader) classLoader).addByteCodes(classesByteArraysMap());
+                ((ByteClassLoader) classLoader).addByteCodes(classesByteArraysMap(), sources);
             }
-        }
-        return new Loaded();
-    }
-
-    @Override
-    public Loaded loadHidden(MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException {
-        return loadHidden(null, classOptions);
-    }
-
-    @Override
-    public Loaded loadHidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException {
-        if (classLoader == null) {
-            classLoader = new HiddenByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), lookup, classOptions);
-        } else {
-            throw new RuntimeException("Should not reuse hidden loading class loader.");
         }
         return new Loaded();
     }
