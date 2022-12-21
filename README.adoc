@@ -1,35 +1,24 @@
-
-= SourceBuddy
-
-
+[WARNING]
+--
+* Snippet 'clPackage' is not defined at /Users/verhasp/github/sourcebuddy/README.adoc.jam/342:78
+--
+{%@import samplemacros.jim%}
+= {%SB%}
+{%@snip:collect from="src/test/java"%}
+{%@snip:collect from="src/main/java"%}
 
 == Introduction
 
 You can compile Java source code you created dynamically in your Java application.
-Your code can create the source code of one or more Java classes, pass the strings to SourceBuddy and use the classes.
+Your code can create the source code of one or more Java classes, pass the strings to {%SB%} and use the classes.
 
-[source,java]
-----
-String source = """
-        package com.sb.demo;
+{%sample simple_compile%}
 
-        public class MyClass implements Talker{
-            @Override
-            public void say() {
-                System.out.println("Hello, Buddy!");
-          }
-        }""";
-Class<?> myClassClass = Compiler.compile(source);
-Talker myClass = (Talker) myClassClass.getConstructor().newInstance();
-myClass.say();
-
-----
-
-SourceBuddy is a simple Java source compiler facade in front of the JDK-provided `javac` compiler.
+{%SB%} is a simple Java source compiler facade in front of the JDK-provided `javac` compiler.
 I designed it for applications creating Java source code on the fly during run-time.
 The JDK API is complex and hard to use.
-You can compile Java code using only the JDK, but using SourceBuddy, it is nider.
-Using SourceBuddy, you do not need to implement anything except your application logic.
+You can compile Java code using only the JDK, but using {%SB%}, it is nider.
+Using {%SB%}, you do not need to implement anything except your application logic.
 
 image::images/compile_flow.svg[]
 You
@@ -40,12 +29,7 @@ You
 . fetch the compiled `.class` files as `byte[]`, save to file or the load the classes.
 . use the class and instances (not on the picture).
 
-[source,java]
-----
-Talker myClass = Compiler.java().from(source).compile().load().newInstance(Talker.class);
-myClass.say();
-
-----
+{%sample/fluent_api_intro%}
 
 There is
 
@@ -66,7 +50,7 @@ In this document, we will explain the details of how to use the library, includi
 * support.
 
 == Maven Coordinates
-
+{%@snip:xml pom=./pom.xml%}
 
 The library is available from Maven central.
 The Maven central coordinates are:
@@ -74,13 +58,13 @@ The Maven central coordinates are:
 [source,xml]
 ----
 <dependency>
-    <groupId>com.javax0.sourcebuddy</groupId>
-    <artifactId>SourceBuddy</artifactId>
-    <version>1.1.1</version>
+    <groupId>{%pom //project/groupId%}</groupId>
+    <artifactId>{%pom //project/artifactId%}</artifactId>
+    <version>{%pom //project/version%}</version>
 </dependency>
 ----
 
-SourceBuddy requires Java 17.
+SourceBuddy requires Java {%pom //project/build/plugins/plugin/configuration/release%}.
 
 Documentation on the different link:RELEASES.adoc[releases].
 
@@ -92,8 +76,9 @@ Here is the line from the example displayed in the introduction using this metho
 
 [soure,java]
 ----
-Class<?> myClassClass = Compiler.compile(source);
-
+{%#trimLines
+{%#killLines keep pattern="myClassClass\\s+="
+{%@snip simple_compile%}%}%}
 ----
 
 The method's parameter is the string source code of the class.
@@ -108,49 +93,26 @@ The fluent API is available when there are more files to be compiled or when you
 
 To demonstrate the use of the API, we will use the sample code:
 
-[source,java]
+{%numberedSample/api_doc%}
+{%@define src($N)=[source,java]
 ----
- 1. String sourceFirstClass = """
- 2.         package com.sb.demo;
- 3. 
- 4.         public class FirstClass {
- 5.             public String a() {
- 6.                 return "x";
- 7.           }
- 8.         }""";
- 9. final var compiled = Compiler.java()
-10.         .from("com.sb.demo.FirstClass", sourceFirstClass)
-11.         .from(Paths.get("src/test/java"))
-12.         .compile();
-13. compiled.saveTo(Paths.get("./target/generated_classes"));
-14. compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));
-15. final var loaded = compiled.load();
-16. Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
-17. Object firstClassInstance = loaded.newInstance("com.sb.demo.FirstClass");
-18. loaded.stream().forEach(klass -> System.out.println(klass.getSimpleName()));
-19. final var compiler = loaded.reset();
-20. final var sameCompiler = compiled.reset();
-
-----
-
+{%#range lines=$N..$N
+{%@snip api_doc%}%}
+----%}
 
 In the following sections we wil go through the lines of the code.
 
-
-
-=== 1.  Get the compiler object
+{%@counter:define id=STEP format="%d. "%}
+{%@counter:define id=NEXT start=9 %}
+=== {%STEP%} Get the compiler object
 
 To start the compilation, you must have a `Compiler` object.
 To get that, you have to call the
 
+{%#define COMPILER_CREATION_LINE={%NEXT%}%}
+{%src {%COMPILER_CREATION_LINE%}%}
 
-[source,java]
-----
-        final var compiled = Compiler.java()
-
-----
-
-=== 2.  Add sources
+=== {%STEP%} Add sources
 
 The next step is to add the source files to the compiler object.
 To do that, you can specify the sources one by one as strings, or you can add directories where the source files are.
@@ -158,52 +120,36 @@ The overloaded method `from()` is used for both operations.
 
 To add sources individually, you can call
 
-[source,java]
-----
-                .from("com.sb.demo.FirstClass", sourceFirstClass)
-
-----
+{%src {%NEXT%}%}
 
 The first argument is the binary name of the class.
 The second is the actual source code.
 To add multiple sources, you can call this method one after the other multiple times.
 However, if the sources are in the file system in a directory, you can also call
 
-[source,java]
-----
-                .from(Paths.get("src/test/java"))
-
-----
+{%src {%NEXT%}%}
 
 In this call, you specify only one parameter, a path pointing to the source root.
 It is the directory where the directory structure matching the Java package structure starts.
 You can have many calls to this method if you have multiple source trees on the disk.
 You can also add some of the sources as strings, individually and others scanned from the file system.
 
-=== 3.  Compile
+=== {%STEP%} Compile
 
 After the program loaded the sources, the next thing is to compile:
 
-[source,java]
-----
-                .compile();
-
-----
+{%src {%NEXT%}%}
 
 The compilation generates the bytes codes for the Java source files.
 They are not loaded as Java classes into the memory yet.
 
-=== 4.  Save the byte codes
+=== {%STEP%} Save the byte codes
 
 The next step you can do is save the byte codes.
 It is not a must.
 You can ignore this step if you do not need the compiled byte codes in the file system.
 
-[source,java]
-----
-        compiled.saveTo(Paths.get("./target/generated_classes"));
-
-----
+{%src {%NEXT%}%}
 
 The argument to this method is the path to where the program will save the class files.
 If the directory does not exist, the code will create it recursively.
@@ -213,16 +159,12 @@ Adding this directory to a standard URL class loader will be able to load these 
 The return value of this method is `void`, not chainable.
 This method is usually the last action you invoke on a compiler.
 
-=== 5.  Stream through the byte codes
+=== {%STEP%} Stream through the byte codes
 
 Sometimes you do not want to save the byte code to `.class` files.
 You can use the compiler object at this stage to iterate through the compiled codes, calling
 
-[source,java]
-----
-        compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));
-
-----
+{%src {%NEXT%}%}
 
 The return value of the method `stream()` at this point is `Stream<byte[]>`.
 It is up to you how you use these byte arrays.
@@ -232,14 +174,14 @@ You can call the static method `getBinaryName()` to get the name.
 It is a utility method that gauges the name of the class from the binary representation.
 You can use this method for any byte code, not only those compiled with the compiler.
 
-NOTE: The `getBinaryName()` implementation supports JVM byte code up to 63, which is Java 19.
+NOTE: The `getBinaryName()` implementation supports JVM byte code up to {%@snip JVM_VERSION /(\d+)/%}, which is Java {%@snip JAVA_VERSION /(\d+)/%}.
 
 The API built into the Java run-time is complex because it was designed to handle several input files (Java source code) and output files (generated byte code) reading and writing possibilities. Therefore, it needs the implementation of complex classes that provide the source code and store the generated byte code.
 
 To ease the burden, this library implements these classes and class loaders to handle the simple case when you want to compile Java source available during run-time in String objects, and you want to load the compiled classes instead of generating `.class` files.
 
-=== 6.  Load the classes
-
+=== {%STEP%} Load the classes
+{%#define LOAD_THE_CLASSESS_SECTION={%STEP last%}%}
 Applications want not only to compile the Java classes on the fly but also to load them.
 The aptly named method `load()` can be used to do that.
 
@@ -247,11 +189,7 @@ The method `load()` has two versions.
 One is without argument; the other needs a class loader.
 The more straightforward and recommended way is:
 
-[source,java]
-----
-        final var loaded = compiled.load();
-
-----
+{%src {%NEXT%}%}
 
 It will load the classes from the memory-stored byte code to the JVM.
 This loading will convert the byte codes to `Class` objects.
@@ -268,7 +206,7 @@ Since it is `null` you cannot reference these classes.
 NOTE: Even though these classes "have no name" you still have to give them some name following the `class` keyword.
 This name for the Java run-time is not inetresting.
 You can load many hidden classes in the source code with the same name.
-SourceBuddy, on the other hand, needs a distinguising name unique inside one compiler object.
+{%SB%}, on the other hand, needs a distinguising name unique inside one compiler object.
 It can also load several versions of a single named hidden class, but you must use different compiler objects.
 The reason: the `Compiler` object identifies the classes using the names you provided for the compilation.
 If two classes have the same name, then `loaded.get(className)` would not know which version it has to return.
@@ -289,17 +227,11 @@ The recommended way is
 
 This may look as simple as
 
-[source,java]
-----
-Compiler.java().from( "package com.sb.demo;class Z{}").compile().loadHidden(MethodHandles.lookup());
-----
+{%sample loadHidden_Lookup%}
 
 For a simpler interface you can also call the method without this argument, as
 
-[source,java]
-----
-Compiler.java().from("Z", "class Z{}").compile().loadHidden();
-----
+{%sample loadHidden_noLookup%}
 
 Calling the method `loadHidden()` without a lookup object is more resouce intensive.
 ====
@@ -309,13 +241,13 @@ Calling the method `loadHidden()` without a lookup object is more resouce intens
 The hidden class loading can also have `ClassOption` vararg arguments.
 These control whether a loaded hidden class becomes attached to the classloader and to be a member of a nest host.
 To accommodate the possibility, the methods `loadHidden(ClassOption... options)` and `loadHidden(MethodHandles.Lookup lookup, ClassOption... options)` also accepts these as vararg parameters.
-I see no reason where you would use these with SourceBuddy.
+I see no reason where you would use these with {%SB%}.
 ====
 
 Note that the methods `load()` and `loadHidden()` return objects which handle the loaded classes.
 These are not the compiler object.
 
-=== 7.  Get access to the classes
+=== {%STEP%} Get access to the classes
 
 When the classes are loaded, your code will want to access some of them.
 Since the code creates these classes run-time, they are not available during the compile time of your program.
@@ -324,48 +256,32 @@ After that, you can use casting to an interface the class implements, a supercla
 
 To get a class object by its name, you can call
 
-[source,java]
-----
-        Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
-
-----
+{%src {%NEXT%}%}
 
 The class also contains a complimentary method called `newInstance(String className, Class type)`.
 When you call
 
-[source,java]
-----
-        Object firstClassInstance = loaded.newInstance("com.sb.demo.FirstClass");
-
-----
+{%src {%NEXT%}%}
 
 you will get a new instance of the class.
 
-=== 8.  Stream through the class objects
+=== {%STEP%} Stream through the class objects
 
 You can also get a stream of the classes.
 
-[source,java]
-----
-        loaded.stream().forEach(klass -> System.out.println(klass.getSimpleName()));
-
-----
+{%src {%NEXT%}%}
 
 Note that this is not the same `stream()` method we called after the compilation.
 That method returned a stream of byte arrays.
 This method returns a stream of classes.
 
-=== 9.  Reset the compiler
+=== {%STEP%} Reset the compiler
 
 Last but not least, you can reset the compiler.
 You may need to reset the compiler to reuse it to compile additional sources.
 In most cases, it is better to get a new compiler calling
 
-[source,java]
-----
-        final var compiled = Compiler.java()
-
-----
+{%src {%COMPILER_CREATION_LINE%}%}
 
 The only case when the reuse of the compiler is needed is when the classes in the new compilation etap need access to the classes from previous etaps.
 Using two different compiler objects will compile classes that see the classes of the 'host' code and the classes added to the compiler, but not each other.
@@ -379,28 +295,16 @@ I recommend not resetting the compiler object except when needed.
 
 To reset the compiler, you can invoke the method
 
-[source,java]
-----
-        final var compiler = loaded.reset();
-
-----
+{%src {%NEXT%}%}
 
 
 You can invoke this method on the compiler object, even if you used it to create a loaded object:
 
-[source,java]
-----
-        final var sameCompiler = compiled.reset();
-
-----
+{%src {%NEXT%}%}
 
 The object you get back from both of these calls is the same as the one you can call
 
-[source,java]
-----
-        final var compiled = Compiler.java()
-
-----
+{%src {%COMPILER_CREATION_LINE%}%}
 
 except that it already contains the classes you added to it previously.
 
@@ -420,7 +324,7 @@ Calling reset on a compiler object that was used to load hidden classes will thr
 == Loading Hidden Classes
 
 This chapter describes some technical details about hidden class loading.
-In the previous chapter in section 6.  we discussed the hidden class loading.
+In the previous chapter in section {%LOAD_THE_CLASSESS_SECTION%} we discussed the hidden class loading.
 There is a method `loadHidden()` to load the compiled classes hidden.
 The method has a version that accepts a lookup object as argument; and we also said that using it without this argument is more resouce intensive.
 
@@ -440,7 +344,11 @@ When calling `loadHidden()` without a lookup object the class loader will create
 It will be from the same package as the compiled class.
 To do that, however, it performs a resource intensive task.
 The `MethodHandles.lookup()` call creates a lookup object for the caller class and package.
-In this case that would be the class loader class' package, which is `com.javax0.sourcebuddy`.
+[WARNING]
+--
+* Snippet 'clPackage' is not defined at /Users/verhasp/github/sourcebuddy/README.adoc.jam/342:78
+--
+In this case that would be the class loader class' package, which is `{%@snip clPackage%}`.
 This is not likely to be the package your compiled source class is in.
 
 The version of the method `lookup()` that gets the class as argument is not public.
@@ -457,35 +365,11 @@ The class loader fires up a new `Compiler` object and creates a class implementi
 Then it calls the `Supplier.get()` method to get access to the lookup object.
 Here is the actual code that does that:
 
-[source,java]
-----
-lookup = (MethodHandles.Lookup) Compiler.java().from(packageDot + lookupHelperBinaryName, """
-                %s
-
-                import java.util.function.Supplier;
-                import java.lang.invoke.MethodHandles;
-
-                public class %s implements Supplier<MethodHandles.Lookup> {
-                    public %s(){}
-                    @Override
-                    public MethodHandles.Lookup get() {
-                        return MethodHandles.lookup();
-                    }
-                }
-                """.formatted(packageLine, lookupHelperBinaryName, lookupHelperBinaryName)).compile().load()
-        .newInstance(packageDot + lookupHelperBinaryName, Supplier.class).get();
-
-----
+{%sample /lookup_creation%}
 
 [NOTE]
 ====
-In the code above the variable `packageLine` contains the `package` keyword and the name of the package and a `;`.
-When the generated class is in the default package then this variable is empty string.
-
-`lookupHelperBinaryName` is the name of the class. This is just the letter `A` and a counter to have a unique name every time.
-It could be a constant.
-This variable is used twice, one for the name of the class and once to create a public constructor.
-
+{%@snip lookup_creation_describe%}
 ====
 
 Since this process needs a new compiler, source compilation, creating a new class loader object and invoking the created dynamic class object it will take some time that may be significant in some cases.
@@ -500,4 +384,113 @@ I will react and help you as much as I can afford.
 You are welcome to open tickets in GitHub if you have any question, but also for suggestions and only if you like the tool.
 Usually I struggle with lacking the information about how many are using my tools.
 Do not leave me in the dark.
-
+[WARNING]
+--
+* Snippet 'clPackage' is not defined at /Users/verhasp/github/sourcebuddy/README.adoc.jam/342:78
+--
+[source]
+----
+Snippet 'clPackage' is not defined at /Users/verhasp/github/sourcebuddy/README.adoc.jam/342:78
+javax0.jamal.api.BadSyntaxAt: Snippet 'clPackage' is not defined at /Users/verhasp/github/sourcebuddy/README.adoc.jam/342:78
+	at javax0.jamal.api.BadSyntax.when(BadSyntax.java:79)
+	at javax0.jamal.snippet.SnippetStore.fetchSnippet(SnippetStore.java:195)
+	at javax0.jamal.snippet.SnippetStore.snippet(SnippetStore.java:169)
+	at javax0.jamal.snippet.Snip.evaluate(Snip.java:47)
+	at javax0.jamal.engine.Processor.evaluateBuiltinMacro(Processor.java:448)
+	at javax0.jamal.engine.Processor.lambda$evaluateBuiltInMacro$6(Processor.java:392)
+	at javax0.jamal.engine.Processor.safeEvaluate(Processor.java:401)
+	at javax0.jamal.engine.Processor.evaluateBuiltInMacro(Processor.java:392)
+	at javax0.jamal.engine.Processor.evalMacro(Processor.java:347)
+	at javax0.jamal.engine.Processor.processMacro(Processor.java:260)
+	at javax0.jamal.engine.Processor.process(Processor.java:169)
+	at javax0.jamal.asciidoc.JamalPreprocessor.process(JamalPreprocessor.java:284)
+	at javax0.jamal.asciidoc.JamalPreprocessor.runJamalInProcess(JamalPreprocessor.java:158)
+	at javax0.jamal.asciidoc.JamalPreprocessor.process(JamalPreprocessor.java:125)
+	at org.asciidoctor.jruby.extension.processorproxies.PreprocessorProxy.process(PreprocessorProxy.java:94)
+	at org.asciidoctor.jruby.extension.processorproxies.PreprocessorProxy$INVOKER$i$2$0$process.call(PreprocessorProxy$INVOKER$i$2$0$process.gen)
+	at org.jruby.internal.runtime.methods.JavaMethod$JavaMethodTwoOrN.call(JavaMethod.java:1035)
+	at org.jruby.RubyMethod.call(RubyMethod.java:124)
+	at org.jruby.RubyMethod$INVOKER$i$call.call(RubyMethod$INVOKER$i$call.gen)
+	at org.jruby.internal.runtime.methods.JavaMethod$JavaMethodZeroOrOneOrTwoOrNBlock.call(JavaMethod.java:376)
+	at org.jruby.runtime.callsite.CachingCallSite.call(CachingCallSite.java:204)
+	at org.jruby.ir.interpreter.InterpreterEngine.processCall(InterpreterEngine.java:325)
+	at org.jruby.ir.interpreter.StartupInterpreterEngine.interpret(StartupInterpreterEngine.java:72)
+	at org.jruby.ir.interpreter.Interpreter.INTERPRET_BLOCK(Interpreter.java:116)
+	at org.jruby.runtime.MixedModeIRBlockBody.commonYieldPath(MixedModeIRBlockBody.java:136)
+	at org.jruby.runtime.IRBlockBody.doYield(IRBlockBody.java:170)
+	at org.jruby.runtime.BlockBody.yield(BlockBody.java:108)
+	at org.jruby.runtime.Block.yield(Block.java:188)
+	at org.jruby.RubyArray.each(RubyArray.java:1865)
+	at org.jruby.RubyArray$INVOKER$i$0$0$each.call(RubyArray$INVOKER$i$0$0$each.gen)
+	at org.jruby.internal.runtime.methods.JavaMethod$JavaMethodZeroBlock.call(JavaMethod.java:560)
+	at org.jruby.runtime.callsite.CachingCallSite.call(CachingCallSite.java:85)
+	at org.jruby.runtime.callsite.CachingCallSite.callIter(CachingCallSite.java:94)
+	at org.jruby.ir.instructions.CallBase.interpret(CallBase.java:546)
+	at org.jruby.ir.interpreter.InterpreterEngine.processCall(InterpreterEngine.java:361)
+	at org.jruby.ir.interpreter.StartupInterpreterEngine.interpret(StartupInterpreterEngine.java:72)
+	at org.jruby.ir.interpreter.InterpreterEngine.interpret(InterpreterEngine.java:80)
+	at org.jruby.internal.runtime.methods.MixedModeIRMethod.INTERPRET_METHOD(MixedModeIRMethod.java:164)
+	at org.jruby.internal.runtime.methods.MixedModeIRMethod.call(MixedModeIRMethod.java:151)
+	at org.jruby.internal.runtime.methods.DynamicMethod.call(DynamicMethod.java:210)
+	at org.jruby.runtime.callsite.CachingCallSite.call(CachingCallSite.java:142)
+	at org.jruby.ir.interpreter.InterpreterEngine.processCall(InterpreterEngine.java:345)
+	at org.jruby.ir.interpreter.StartupInterpreterEngine.interpret(StartupInterpreterEngine.java:72)
+	at org.jruby.ir.interpreter.InterpreterEngine.interpret(InterpreterEngine.java:92)
+	at org.jruby.internal.runtime.methods.MixedModeIRMethod.INTERPRET_METHOD(MixedModeIRMethod.java:238)
+	at org.jruby.internal.runtime.methods.MixedModeIRMethod.call(MixedModeIRMethod.java:225)
+	at org.jruby.internal.runtime.methods.DynamicMethod.call(DynamicMethod.java:226)
+	at org.jruby.runtime.callsite.CachingCallSite.call(CachingCallSite.java:204)
+	at org.jruby.ir.interpreter.InterpreterEngine.processCall(InterpreterEngine.java:325)
+	at org.jruby.ir.interpreter.StartupInterpreterEngine.interpret(StartupInterpreterEngine.java:72)
+	at org.jruby.internal.runtime.methods.MixedModeIRMethod.INTERPRET_METHOD(MixedModeIRMethod.java:128)
+	at org.jruby.internal.runtime.methods.MixedModeIRMethod.call(MixedModeIRMethod.java:115)
+	at org.jruby.internal.runtime.methods.DynamicMethod.call(DynamicMethod.java:192)
+	at org.jruby.RubyClass.finvoke(RubyClass.java:784)
+	at org.jruby.runtime.Helpers.invoke(Helpers.java:661)
+	at org.jruby.RubyBasicObject.callMethod(RubyBasicObject.java:370)
+	at org.asciidoctor.jruby.internal.JRubyAsciidoctor.convert(JRubyAsciidoctor.java:311)
+	at org.asciidoctor.jruby.internal.JRubyAsciidoctor.convert(JRubyAsciidoctor.java:336)
+	at org.asciidoctor.jruby.internal.JRubyAsciidoctor.convert(JRubyAsciidoctor.java:331)
+	at org.asciidoc.intellij.AsciiDocWrapper.render(AsciiDocWrapper.java:815)
+	at org.asciidoc.intellij.AsciiDocWrapper.render(AsciiDocWrapper.java:781)
+	at org.asciidoc.intellij.annotator.AsciiDocExternalAnnotatorProcessor.doAnnotate(AsciiDocExternalAnnotatorProcessor.java:96)
+	at org.asciidoc.intellij.annotator.AsciiDocExternalAnnotatorProcessor.doAnnotate(AsciiDocExternalAnnotatorProcessor.java:50)
+	at com.intellij.codeInsight.daemon.impl.ExternalToolPass.doAnnotate(ExternalToolPass.java:209)
+	at com.intellij.codeInsight.daemon.impl.ExternalToolPass.doAnnotate(ExternalToolPass.java:203)
+	at com.intellij.codeInsight.daemon.impl.ExternalToolPass.runChangeAware(ExternalToolPass.java:278)
+	at com.intellij.codeInsight.daemon.impl.ExternalToolPass$1.lambda$run$1(ExternalToolPass.java:181)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.lambda$runProcess$2(CoreProgressManager.java:190)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.lambda$executeProcessUnderProgress$13(CoreProgressManager.java:591)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.registerIndicatorAndRun(CoreProgressManager.java:666)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.computeUnderProgress(CoreProgressManager.java:622)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.executeProcessUnderProgress(CoreProgressManager.java:590)
+	at com.intellij.openapi.progress.impl.ProgressManagerImpl.executeProcessUnderProgress(ProgressManagerImpl.java:60)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.runProcess(CoreProgressManager.java:177)
+	at com.intellij.openapi.progress.util.BackgroundTaskUtil.runUnderDisposeAwareIndicator(BackgroundTaskUtil.java:365)
+	at com.intellij.openapi.progress.util.BackgroundTaskUtil.runUnderDisposeAwareIndicator(BackgroundTaskUtil.java:343)
+	at com.intellij.codeInsight.daemon.impl.ExternalToolPass$1.run(ExternalToolPass.java:180)
+	at com.intellij.util.ui.update.MergingUpdateQueue.execute(MergingUpdateQueue.java:334)
+	at com.intellij.util.ui.update.MergingUpdateQueue.execute(MergingUpdateQueue.java:324)
+	at com.intellij.util.ui.update.MergingUpdateQueue.doExecute(MergingUpdateQueue.java:281)
+	at com.intellij.util.ui.update.MergingUpdateQueue.flush(MergingUpdateQueue.java:264)
+	at com.intellij.util.ui.update.MergingUpdateQueue.run(MergingUpdateQueue.java:238)
+	at com.intellij.util.concurrency.QueueProcessor.runSafely(QueueProcessor.java:241)
+	at com.intellij.util.Alarm$Request.runSafely(Alarm.java:377)
+	at com.intellij.util.Alarm$Request.run(Alarm.java:366)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at com.intellij.util.concurrency.SchedulingWrapper$MyScheduledFutureTask.run(SchedulingWrapper.java:272)
+	at com.intellij.util.concurrency.BoundedTaskExecutor.doRun(BoundedTaskExecutor.java:243)
+	at com.intellij.util.concurrency.BoundedTaskExecutor.access$200(BoundedTaskExecutor.java:29)
+	at com.intellij.util.concurrency.BoundedTaskExecutor$1.executeFirstTaskAndHelpQueue(BoundedTaskExecutor.java:216)
+	at com.intellij.util.ConcurrencyUtil.runUnderThreadName(ConcurrencyUtil.java:212)
+	at com.intellij.util.concurrency.BoundedTaskExecutor$1.run(BoundedTaskExecutor.java:205)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:702)
+	at java.base/java.util.concurrent.Executors$PrivilegedThreadFactory$1$1.run(Executors.java:699)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399)
+	at java.base/java.util.concurrent.Executors$PrivilegedThreadFactory$1.run(Executors.java:699)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+sed -i jam '' /Users/verhasp/github/sourcebuddy/README.adoc.jam
+----

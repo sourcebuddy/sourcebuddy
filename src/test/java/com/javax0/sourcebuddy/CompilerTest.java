@@ -157,15 +157,6 @@ public class CompilerTest {
     }
 
     @Test
-    @DisplayName("Compiler cannot reset when the classes are loaded hidden")
-    public void compilerHiddenCannotReset() throws Exception {
-        final String source1 = loadJavaSource("Test1.java");
-        final String source2 = loadJavaSource("Test2.java");
-        final var compiler = Compiler.java().from(source1).compile().loadHidden();
-        Assertions.assertThrows(RuntimeException.class, () -> compiler.reset().from(source2));
-    }
-
-    @Test
     @DisplayName("There is an IO exception if the source code file cannot be found")
     void testLoadFailure() {
         Assertions.assertThrows(NoSuchFileException.class, () ->
@@ -241,7 +232,7 @@ public class CompilerTest {
     @DisplayName("get the stream of hidden classes")
     public void getStreamOfHiddenClasses() throws Exception {
         final var sut = loadAll(1);
-        sut.compile().loadHidden(MethodHandles.lookup()).stream().forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
+        sut.compile().load().stream().forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
     }
 
     private Fluent.CanCompile loadAll(int n) throws IOException {
@@ -251,7 +242,7 @@ public class CompilerTest {
         }
         var sut = (Fluent.AddSource) Compiler.java();
         for (int i = 1; i <= n; i++) {
-            sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1));
+            sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1)).hidden(MethodHandles.lookup());
         }
         return (Fluent.CanCompile) sut;
     }

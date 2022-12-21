@@ -12,14 +12,14 @@ public class TestDemoHidden {
     @Test
     void loadHiddenClass() throws Exception {
         // snipline loadHidden_noLookup
-        Compiler.java().from("Z", "class Z{}").compile().loadHidden();
+        Compiler.java().from("Z", "class Z{}").hidden().compile().load();
     }
 
     @DisplayName("Load a hidden class with lookup object")
     @Test
     void loadHiddenClassWithLookup() throws Exception {
         // snipline loadHidden_Lookup
-        Compiler.java().from( "package com.sb.demo;class Z{}").compile().loadHidden(MethodHandles.lookup());
+        Compiler.java().from( "package com.sb.demo;class Z{}").hidden(MethodHandles.lookup()).compile().load();
     }
 
 }

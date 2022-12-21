@@ -25,7 +25,7 @@ public class TestCrossPackageCreation {
     @DisplayName("Invoke the hidden class and say hello using SourceBuddy")
     void sayHellotoSB() throws Exception {
         // snippet sayHelloSB
-        final var hello = Compiler.java().from(CLASS_NAME, CODE).compile().loadHidden().newInstance(CLASS_NAME, Hello.class);
+        final var hello = Compiler.java().from(CLASS_NAME, CODE).hidden().compile().load().newInstance(CLASS_NAME, Hello.class);
         hello.hello();
         //end snippet
     }

@@ -21,6 +21,8 @@ public interface Fluent {
     interface CanCompile extends AddSource {
 
         Compiled compile() throws Compiler.CompileException;
+        CanCompile hidden(MethodHandles.Lookup.ClassOption ...classOptions);
+        CanCompile hidden(MethodHandles.Lookup lookup,MethodHandles.Lookup.ClassOption ...classOptions);
     }
 
     interface Compiled {
@@ -28,10 +30,6 @@ public interface Fluent {
         Stream<byte[]> stream();
 
         Compiler.Loaded load() throws ClassNotFoundException;
-
-        Compiler.Loaded loadHidden(MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException;
-
-        Compiler.Loaded loadHidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) throws ClassNotFoundException;
 
         void saveTo(Path path);
 

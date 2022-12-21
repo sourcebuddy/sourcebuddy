@@ -21,7 +21,7 @@ public class TestDemo {
         String source = """
                 package com.sb.demo;
                                 
-                public class MyClass implements Talker{
+                public class MyClass implements Talker {
                     @Override
                     public void say() {
                         System.out.println("Hello, Buddy!");
