@@ -16,6 +16,25 @@ public class TestDemo {
     // end snippet
 
     @Test
+    void simpleCompileOneLine() throws Compiler.CompileException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        String source = """
+                package com.sb.demo;
+                                
+                public class MyClass implements Talker {
+                    @Override
+                    public void say() {
+                        System.out.println("Hello, Buddy!");
+                  }
+                }""";
+        var myO =
+                // snipline simpleCompileOneLine
+                Compiler.compile(source).getConstructor().newInstance();
+        Talker myClass = (Talker) myO;
+        myClass.say();
+        //end snippet
+    }
+
+    @Test
     void oneFileCompile() throws Compiler.CompileException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         // snippet simple_compile
         String source = """
@@ -35,7 +54,7 @@ public class TestDemo {
 
 
     @Test
-    void compileFluentApi() throws Exception{
+    void compileFluentApi() throws Exception {
         String source = """
                 package com.sb.demo;
                                 
@@ -45,10 +64,10 @@ public class TestDemo {
                         System.out.println("Hello, Buddy!");
                   }
                 }""";
-        // snippet fluent_api_intro
-        Talker myClass = Compiler.java().from(source).compile().load().newInstance(Talker.class);
+        Talker myClass =
+                // snipline fluent_api_intro
+                Compiler.java().from(source).compile().load().newInstance(Talker.class);
         myClass.say();
-        // end snippet
 
     }
 

@@ -1,3 +1,4 @@
+//snipline clPackage filter=package\s(.+);
 package com.javax0.sourcebuddy;
 
 import java.lang.invoke.MethodHandles;
@@ -7,8 +8,8 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -69,7 +70,6 @@ public class ByteClassLoader extends URLClassLoader {
     }
 
     private static final Map<String, MethodHandles.Lookup> lookups = new ConcurrentHashMap<>();
-    private static final AtomicLong count = new AtomicLong(0);
 
     @Override
     public Class<?> loadClass(String binaryName) throws ClassNotFoundException {
@@ -99,33 +99,34 @@ public class ByteClassLoader extends URLClassLoader {
                 lookup = lookups.get(packageName);
             } else {
                 final var packageDot = packageName.length() == 0 ? "" : packageName + ".";
-                final var lookupHelperBinaryName = "A%d".formatted(count.addAndGet(1));
+                final var simpleName = ("_" + UUID.randomUUID()).replaceAll("-", "");
+                final var canonicalName = packageDot + simpleName;
                 try {
                     // snippet lookup_creation
-                    lookup = (MethodHandles.Lookup) Compiler.java().from(packageDot + lookupHelperBinaryName, """
-                                    %s
-                                       
-                                    import java.util.function.Supplier;
-                                    import java.lang.invoke.MethodHandles;
-                                                                
-                                    public class %s implements Supplier<MethodHandles.Lookup> {
-                                        public %s(){}
-                                        @Override
-                                        public MethodHandles.Lookup get() {
-                                            return MethodHandles.lookup();
-                                        }
-                                    }
-                                    """.formatted(packageLine, lookupHelperBinaryName, lookupHelperBinaryName)).compile().load()
-                            .newInstance(packageDot + lookupHelperBinaryName, Supplier.class).get();
+                    final byte[] lcByteCode = Compiler.java().from(packageDot + simpleName, """
+                            %s
+                               
+                            import java.util.function.Supplier;
+                            import java.lang.invoke.MethodHandles;
+                                                        
+                            public class %s implements Supplier<MethodHandles.Lookup> {
+                                public %s(){}
+                                @Override
+                                public MethodHandles.Lookup get() {
+                                    return MethodHandles.lookup();
+                                }
+                            }
+                            """.formatted(packageLine, simpleName, simpleName)).compile().get();
+                    final var supplier = defineClass(canonicalName, lcByteCode, 0, lcByteCode.length);
+                    lookup = (MethodHandles.Lookup) ((Supplier<?>) supplier.getConstructor().newInstance()).get();
                     // end snippet
                         /*this goes into the documentation, update if the code above changes
                         // snippet lookup_creation_describe
-In the code above the variable `packageLine` contains the `package` keyword and the name of the package and a `;`.
-When the generated class is in the default package then this variable is empty string.
+In the code above the variable `packageLine` contains the keyword `package`, the name of the package and a `;` semicolon at the end.
+When the generated class is in the default package this variable is empty.
 
-`lookupHelperBinaryName` is the name of the class. This is just the letter `A` and a counter to have a unique name every time.
-It could be a constant.
-This variable is used twice, one for the name of the class and once to create a public constructor.
+`simpleName` and `canonicalName` are the names of the class.
+It is a random unique name.
                         // end snippet
                          */
                     synchronized (lookups) {
@@ -134,7 +135,7 @@ This variable is used twice, one for the name of the class and once to create a 
                         }
                     }
                 } catch (Exception e) {
-                    throw new ClassNotFoundException("%s cannot be loaded".formatted(lookupHelperBinaryName), e);
+                    throw new ClassNotFoundException("%s cannot be loaded".formatted(simpleName), e);
                 }
             }
         }

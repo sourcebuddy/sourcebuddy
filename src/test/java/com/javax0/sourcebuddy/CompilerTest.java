@@ -28,9 +28,8 @@ public class CompilerTest {
         }
     }
 
-    private Path getResourcePath(String name) {
-        //noinspection ConstantConditions
-        return Paths.get(this.getClass().getResource(name).getPath());
+    private Path getTest1ResourcePath() {
+        return Paths.get(this.getClass().getResource("Test1.java").getPath());
     }
 
     @Test
@@ -47,7 +46,7 @@ public class CompilerTest {
     @Test
     @DisplayName("source code compiles providing the path to the file")
     public void goodSimpleCodeWithPathToFile() throws Exception {
-        Class<?> newClass = Compiler.java().from(getResourcePath("Test1.java")).compile().load().get();
+        Class<?> newClass = Compiler.java().from(getTest1ResourcePath()).compile().load().get();
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -57,7 +56,7 @@ public class CompilerTest {
     @Test
     @DisplayName("source code compiles providing the path to the file with explicit name")
     public void goodSimpleCodeWithPathToFileAndName() throws Exception {
-        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1", getResourcePath("Test1.java")).compile().load().get();
+        Class<?> newClass = Compiler.java().from("com.javax0.sourcebuddy.Test1", getTest1ResourcePath()).compile().load().get();
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -257,10 +256,27 @@ public class CompilerTest {
     void compileAllFromFile() throws Exception {
         final var classes = Compiler.java().from(Paths.get("./src/test/resources/source_tree")).compile().load();
         Class<?> newClass = classes.get("com.javax0.sourcebuddy.Test1");
-        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1", Object.class);
+        Object object = classes.newInstance("com.javax0.sourcebuddy.Test1");
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
         Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("Compile one class and load the object")
+    void loadOne() throws Exception {
+        final Object o = Compiler.java().from("package A;public class A{}").compile().load().newInstance();
+        Assertions.assertNotNull(o);
+    }
+
+    @Test
+    @DisplayName("Redefine class is not possible")
+    void redefineAsHidden() throws Exception {
+        final var compiler = Compiler.java();
+        compiler.from("A", "class A { void hi(){} } ").compile().load().get();
+        compiler.reset();
+        Assertions.assertThrows(Compiler.CompileException.class,
+                () -> compiler.from("A", "class A { void lo(){} } ").compile().load().get());
     }
 
 }

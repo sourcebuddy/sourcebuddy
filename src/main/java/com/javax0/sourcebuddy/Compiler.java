@@ -168,6 +168,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
             return (T) get().getConstructor().newInstance();
         }
 
+        public Object newInstance()
+                throws ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ClassCastException {
+            return get().getConstructor().newInstance();
+        }
+
         /**
          * Get the compiled and loaded class as a stream.
          *
@@ -388,7 +398,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      */
     @Override
     public Fluent.CanCompile hidden(MethodHandles.Lookup.ClassOption... classOptions) {
-        return hidden(null,classOptions);
+        return hidden(null, classOptions);
     }
 
     /**
@@ -426,6 +436,26 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         return classesByteArraysMap().values().stream();
     }
 
+    /**
+     * Get the byte code of the compiled class.
+     * This method can be called if there is only one single class compiled.
+     *
+     * @return the byte code of the compiled class
+     * @throws ClassNotFoundException if there was no class compiled or more than one was compiled
+     */
+    public byte[] get() throws ClassNotFoundException {
+        final var map = classesByteArraysMap();
+        if (map.size() == 0) {
+            throw new ClassNotFoundException("There was no class compiled.");
+        }
+        if (map.size() > 1) {
+            throw new ClassNotFoundException("There were many classes compiled, you must specify the name which one you want to get.");
+        }
+        for( final var e : map.entrySet()){
+            return e.getValue();
+        }
+        return null;
+    }
 
     /**
      * Load the compiled classes using the library provided class loader.
