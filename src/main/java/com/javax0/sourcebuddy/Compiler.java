@@ -2,8 +2,6 @@ package com.javax0.sourcebuddy;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -21,8 +19,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
-
 /**
  * A very simple Java source compiler code based on the javac provided by the
  * JDK. This class can be used to compile sources that do not depend on any
@@ -36,7 +32,19 @@ import static java.lang.String.format;
  *
  * @author Peter Verhas
  */
-public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Compiled {
+public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.SpecifyNestHiddenNamed, Fluent.Compiled {
+
+    public enum LoaderOption {
+        // snippet LoaderOption
+        REVERSE, // will load the compiled classes first even if a class with the same name is already loaded.
+        // The default behaviour is to call the parent class loader first.
+        // Using this option reverses this strategy.
+        // In the case of hidden classes this is the default strategy and there is no possibility to reverse it.
+        NORMAL, // is the default.
+        // Consult the parent class loader first to load classes.
+        // The compiler's class loader is used only if the other class loaders could not load the class.
+        // end snippet
+    }
 
     /**
      * Exception type that the compilation process throws if the source code cannot be compiled. The message of the
@@ -50,7 +58,8 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
     }
 
     /**
-     * Inner class supporting the fluent API. This class contains the methods invoked after {@link #load()}.
+     * Inner class supporting the fluent API. This class contains the methods invoked after {@link
+     * #load(LoaderOption...) load()}.
      */
     public class Loaded {
         Loaded() throws ClassNotFoundException {
@@ -117,7 +126,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 IllegalAccessException,
                 ClassCastException {
             //noinspection unchecked
-            return (T) get(name).getConstructor().newInstance();
+            final var constructor = get(name).getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return (T) constructor.newInstance();
         }
 
         /**
@@ -139,7 +150,33 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 InstantiationException,
                 IllegalAccessException,
                 ClassCastException {
-            return get(name).getConstructor().newInstance();
+            final var constructor = get(name).getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        }
+
+        public Object newInstance(final String name, Class<?>[] types, Object[] args)
+                throws ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ClassCastException {
+            final var constructor = get(name).getDeclaredConstructor(types);
+            constructor.setAccessible(true);
+            return constructor.newInstance(args);
+        }
+
+        public <T> T newInstance(final String name, Class<T> ignored, Class<?>[] types, Object[] args)
+                throws ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ClassCastException {
+            final var constructor = get(name).getDeclaredConstructor(types);
+            constructor.setAccessible(true);
+            return (T) constructor.newInstance(args);
         }
 
         /**
@@ -165,7 +202,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 IllegalAccessException,
                 ClassCastException {
             //noinspection unchecked
-            return (T) get().getConstructor().newInstance();
+            final var constructor = get().getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return (T) constructor.newInstance();
         }
 
         public Object newInstance()
@@ -175,7 +214,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
                 InstantiationException,
                 IllegalAccessException,
                 ClassCastException {
-            return get().getConstructor().newInstance();
+            final var constructor = get().getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
         }
 
         /**
@@ -226,6 +267,25 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
     }
 
     /**
+     * This method provides the simple API for the compilation. It can be used to compile one single Java source file
+     * specified as a {@link String} providing the name of the class and also the type for the returned class.
+     * <p>
+     * This version can be used when the source is complex and the library cannot detect the name of the class properly,
+     * and the class extends a class or implements an interface available at compile time.
+     * <p>
+     * Compile the Java code provided as a string and if the compilation was successful then load the class.
+     *
+     * @param binaryName the fully qualified name of the class
+     * @param sourceCode the Java source code of the class
+     * @param <T>        is the type of the class available at compile time and to which the resulting class can be converted (cast)
+     * @return the loaded class or null if the compilation was not successful
+     */
+    public static <T> Class<T> compile(final String binaryName, final String sourceCode, final Class<T> ignored) throws CompileException, ClassNotFoundException {
+        return (Class<T>) compile(binaryName, sourceCode);
+    }
+
+
+    /**
      * This method provides a simple API for the compilation.
      * The functionality is the same as in the case of {@link #compile(String, String)}, except here you do not need
      * to specify the name of the class. The code will try to figure out the name of the class form the source code.
@@ -240,6 +300,27 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         final var compiler = Compiler.java();
         final var loaded = compiler.from(sourceCode).compile().load();
         return loaded.get();
+    }
+
+    /**
+     * This method provides the simple API for the compilation.
+     * The functionality is the same as in the case of {@link #compile(String, String, Class)}, except here you do not
+     * need to specify the name of the class. The code will try to figure out the name of the class form the source code.
+     * <p>
+     * It can be used to compile one single Java source file specified as a {@link String}, and also the type for the
+     * returned class.
+     * <p>
+     * This version can be used when the class extends a class or implements an interface available at compile time.
+     * <p>
+     * Compile the Java code provided as a string and if the compilation was successful then load the class.
+     *
+     * @param sourceCode the Java source code of the class
+     * @param <T>        is the type of the class available at compile time and to which the resulting class can be
+     *                   converted (cast)
+     * @return the loaded class or null if the compilation was not successful
+     */
+    public static <T> Class<T> compile(final String sourceCode, Class<T> ignored) throws CompileException, ClassNotFoundException {
+        return (Class<T>) compile(sourceCode);
     }
 
     public static Fluent.AddSource java() {
@@ -279,7 +360,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @return the fluent object for further calling
      * @throws ClassNotFoundException when the name of the class cannot be identified from the source
      */
-    public Fluent.CanCompile from(final String sourceCode) throws ClassNotFoundException {
+    public Fluent.SpecifyNestHiddenNamed from(final String sourceCode) throws ClassNotFoundException {
         final var binaryName = getBinaryNameFromSource(sourceCode);
         return from(binaryName, sourceCode);
     }
@@ -292,7 +373,8 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @param sourceCode the Java source code as a string.
      * @return the fluent object for the further call chaining
      */
-    public Fluent.CanCompile from(final String binaryName, final String sourceCode) {
+    @Override
+    public Fluent.SpecifyNestHiddenNamed from(final String binaryName, final String sourceCode) {
         if (state != CompilationState.ADD_SOURCE) {
             throw new RuntimeException("Cannot add source after compilation");
         }
@@ -315,7 +397,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @param fileOrDir the path to the source directory or to a source file.
      * @return the fluent object for the further call chaining
      */
-    public Fluent.CanCompile from(final Path fileOrDir) throws IOException, ClassNotFoundException {
+    public Fluent.SpecifyNestHiddenNamed from(final Path fileOrDir) throws IOException, ClassNotFoundException {
         if (new File(fileOrDir.toUri()).isDirectory()) {
             try (final var fileStream = Files.walk(fileOrDir)) {
                 sources.addAll(
@@ -349,7 +431,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @param file       the file that contains the source code
      * @return the fluent object for the further call chaining
      */
-    public Fluent.CanCompile from(final String binaryName, final Path file) {
+    public Fluent.SpecifyNestHiddenNamed from(final String binaryName, final Path file) {
         final var source = getFileContent(file);
         sources.add(new StringJavaSource(binaryName, source));
         return this;
@@ -379,6 +461,23 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         }
     }
 
+    @Override
+    public Fluent.CanCompile named() {
+        return this;
+    }
+
+    @Override
+    public Fluent.CanCompile named(MethodHandles.Lookup lookup) {
+        if (sources.size() == 0) {
+            throw new RuntimeException("There is no source added, this is an internal error.");
+        }
+        final var lastSource = sources.get(sources.size() - 1);
+        lastSource.isHidden = false;
+        lastSource.lookup = lookup;
+        return this;
+    }
+
+    @Override
     public Fluent.CanCompile hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
         if (sources.size() == 0) {
             throw new RuntimeException("There is no source added, this is an internal error.");
@@ -388,7 +487,18 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         lastSource.lookup = lookup;
         lastSource.classOptions = classOptions;
         return this;
+    }
 
+    @Override
+    public Fluent.CanCompile nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
+        if (sources.size() == 0) {
+            throw new RuntimeException("There is no source added, this is an internal error.");
+        }
+        final var lastSource = sources.get(sources.size() - 1);
+        lastSource.isNest = true;
+        lastSource.lookup = lookup;
+        lastSource.classOptions = classOptions;
+        return this;
     }
 
     /**
@@ -399,6 +509,11 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
     @Override
     public Fluent.CanCompile hidden(MethodHandles.Lookup.ClassOption... classOptions) {
         return hidden(null, classOptions);
+    }
+
+    @Override
+    public Fluent.CanCompile nest(MethodHandles.Lookup.ClassOption... classOptions) {
+        return nest(null, classOptions);
     }
 
     /**
@@ -433,7 +548,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @return the stream of byte arrays each containing the byte code of one of the compiled classes
      */
     public Stream<byte[]> stream() {
-        return classesByteArraysMap().values().stream();
+        return manager.getClassFileObjectsMap().values().stream().map(MemoryFileObject::getByteArray);
     }
 
     /**
@@ -451,7 +566,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         if (map.size() > 1) {
             throw new ClassNotFoundException("There were many classes compiled, you must specify the name which one you want to get.");
         }
-        for( final var e : map.entrySet()){
+        for (final var e : map.entrySet()) {
             return e.getValue();
         }
         return null;
@@ -463,9 +578,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @return the fluent api object
      * @throws ClassNotFoundException if some classes cannot be loaded for whatever reason
      */
-    public Loaded load() throws ClassNotFoundException {
+    public Loaded load(LoaderOption... options) throws ClassNotFoundException {
         if (classLoader == null) {
-            classLoader = new ByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), sources);
+            classLoader = new ByteClassLoader(this.getClass().getClassLoader(), classesByteArraysMap(), sources, options);
         } else {
             if (classLoader instanceof ByteClassLoader) {
                 ((ByteClassLoader) classLoader).addByteCodes(classesByteArraysMap(), sources);
@@ -494,11 +609,6 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         });
     }
 
-    // snipline JVM_VERSION
-    private final static int JVM_VERSION = 63;
-    // snipline JAVA_VERSION
-    private final static int JAVA_VERSION = 19;
-
     /**
      * Get the binary name of the class from the compiled byte code array.
      *
@@ -506,102 +616,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * @return the name of the class
      */
     public static String getBinaryName(byte[] byteCode) {
-        try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {
-            final var magic = is.readInt();
-            if (magic != 0xCAFEBABE) {
-                throw new RuntimeException("Class file header is missing.");
-            }
-            @SuppressWarnings("unused") final var minor = is.readUnsignedShort();
-            final var major = is.readUnsignedShort();
-            if (major > JVM_VERSION) {
-                throw new RuntimeException(String.format("This version support Java up to version %d.", JAVA_VERSION));
-            }
-            final int constantPoolCount = is.readShort();
-            final var classes = new int[constantPoolCount - 1];
-            final var strings = new String[constantPoolCount - 1];
-            for (int i = 0; i < constantPoolCount - 1; i++) {
-                int t = is.read();
-                switch (t) {
-                    case 1 ->//utf-8
-                            strings[i] = is.readUTF();
-                    // Long
-                    case 5, 6 -> { // Double
-                        read8(is);
-                        i++;
-                    }
-                    case 7 -> // Class index
-                            classes[i] = is.readUnsignedShort();
-                    // method type
-                    case 16, 8 -> // string index
-                            read2(is);
-                    //Integer
-                    // float
-                    // field ref
-                    // method ref
-                    // interface method ref
-                    // name and type
-                    case 3, 4, 9, 10, 11, 12, 18 -> // invoke dynamic
-                            read4(is);
-                    case 15 -> { // method handle
-                        read1(is);
-                        read2(is);
-                    }
-                    default -> throw new RuntimeException(format("Invalid constant pool tag %d at position %d", t, i));
-                }
-            }
-            is.readShort(); // skip access flags
-            final var classNameIndex = is.readUnsignedShort();
-            if (classNameIndex >= constantPoolCount - 1) {
-                throw new RuntimeException("The binary class file seems to be corrupt.");
-            }
-            final var classNameStringIndex = classes[classNameIndex - 1] - 1;
-            if (classNameStringIndex >= constantPoolCount - 1) {
-                throw new RuntimeException("The binary class file seems to be corrupt.");
-            }
-            return strings[classNameStringIndex].replace('/', '.');
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Read one byte form the data input stream.
-     *
-     * @param dis the input stream to read from
-     * @throws IOException when some error happens
-     */
-    private static void read1(DataInputStream dis) throws IOException {
-        dis.read();
-    }
-
-    /**
-     * Read two bytes form the data input stream.
-     *
-     * @param dis the input stream to read from
-     * @throws IOException when some error happens
-     */
-    private static void read2(DataInputStream dis) throws IOException {
-        dis.readShort();
-    }
-
-    /**
-     * Read four bytes form the data input stream.
-     *
-     * @param dis the input stream to read from
-     * @throws IOException when some error happens
-     */
-    private static void read4(DataInputStream dis) throws IOException {
-        dis.readInt();
-    }
-
-    /**
-     * Read eight bytes form the data input stream.
-     *
-     * @param dis the input stream to read from
-     * @throws IOException when some error happens
-     */
-    private static void read8(DataInputStream dis) throws IOException {
-        dis.readLong();
+        return NameGouger.getBinaryName(byteCode);
     }
 
     /**
@@ -625,6 +640,10 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
      * no package) then the simple name os the binary name.
      * If there are more than one classes with the simple name, and none of them is in the default package then a
      * {@link ClassNotFoundException} will throw.
+     * <p>
+     * If there is no class with the given simple name, then the algorithm will also try to find any class that
+     * ends with the given string. This can be used to find generated inner classes easily without needing to
+     * specify the {@code Outer$Inner} name, just giving the {@code Inner}.
      *
      * @param simpleName the simple name of the class
      * @return the found binary name
@@ -636,21 +655,32 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         if (simpleName.contains(".")) {
             return simpleName;
         }
-        for (final var source : sources) {
-            int dotPos = source.binaryName.lastIndexOf('.');
+        for (final var name : manager.getClassFileObjectsMap().keySet()) {
+            int dotPos = name.lastIndexOf('.');
             if (dotPos == -1) {
-                if (simpleName.equals(source.binaryName)) {
+                if (simpleName.equals(name)) {
                     return simpleName;
                 }
             } else {
-                if (simpleName.equals(source.binaryName.substring(dotPos + 1))) {
+                if (simpleName.equals(name.substring(dotPos + 1))) {
                     if (found) {
                         throw new ClassNotFoundException("The name of the class %s is ambiguous".formatted(simpleName));
-                    } else {
-                        found = true;
-                        binaryName = source.binaryName;
                     }
+                    found = true;
+                    binaryName = name;
                 }
+            }
+        }
+        if (found) {
+            return binaryName;
+        }
+        for (final var name : manager.getClassFileObjectsMap().keySet()) {
+            if (name.endsWith(simpleName)) {
+                if (found) {
+                    throw new ClassNotFoundException("The name of the class %s is ambiguous".formatted(simpleName));
+                }
+                found = true;
+                binaryName = name;
             }
         }
         if (!found) {
@@ -667,4 +697,13 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Com
         }
         throw new ClassNotFoundException("Cannot find the package and/or class declaration in the source code");
     }
+
+    public static Class<?>[] classes(Class<?>... k) {
+        return k;
+    }
+
+    public static Object[] args(Object... k) {
+        return k;
+    }
+
 }

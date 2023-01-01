@@ -13,13 +13,11 @@ import java.net.URI;
 import java.util.Date;
 
 public class MemoryFileObject implements JavaFileObject {
-    private static final System.Logger LOG = System.getLogger(ByteClassLoader.class.getName());
 
     private final String name;
     private final ByteArrayOutputStream fileBytesContent = new ByteArrayOutputStream();
 
     public MemoryFileObject(final String name) {
-        LOG.log(System.Logger.Level.DEBUG, String.format("Creating MemoryFileObject(%s)", name));
         this.name = name;
     }
 

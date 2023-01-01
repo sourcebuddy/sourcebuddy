@@ -2,12 +2,15 @@
 = {%SB%}
 {%@snip:collect from="src/test/java"%}
 {%@snip:collect from="src/main/java"%}
+{%@snip:xml pom=./pom.xml%}
+
 
 == Introduction
+.This documentation is about the version {%pom //project/version%} of the software.
 
 You can compile Java source code you created dynamically in your Java application.
 Your program can create the source code of one or more Java classes, pass the strings to {%SB%} and use the classes.
-An example code is the following.
+An example code is the following:
 
 {%sample simple_compile%}
 
@@ -27,17 +30,17 @@ You
 . get a `Compiler` object calling the `Compiler.java()`, and from there, all you need is
 . specify the source code either as Java strings or files,
 . call `compile()`,
-. fetch the compiled `.class` files as `byte[]`, save to file or the load the classes.
+. fetch the compiled `.class` files as `byte[]`, save to file or the load the classes, OR
 . use the class and instances (not on the picture, it is already up to you).
 
 
-There is
+There are two apis.
 
-* a simple API with one call for simple cases compiling one class only, and
+* A simple API with one call for simple cases compiling one class only, and
 
 {%sample simpleCompileOneLine%}
 
-* a still simple, but more versatile fluent API for cases being a bit more complex.
+* a more versatile fluent API for cases being a bit more complex.
 
 {%sample fluent_api_intro%}
 
@@ -45,16 +48,17 @@ In this document, we will explain the details of how to use the library, includi
 
 * Maven coordinates,
 
-* simple API,
+* Simple API,
 
 * Fluent API,
 
-* Handling Hidden Classes, and
+* Handling Hidden Classes,
 
-* support.
+* Creating and Loading Inner Classes, and
+
+* Support.
 
 == Maven Coordinates
-{%@snip:xml pom=./pom.xml%}
 
 The library is available from Maven central.
 The Maven central coordinates are:
@@ -74,7 +78,7 @@ Documentation on the different link:RELEASES.adoc[releases].
 
 == Simple API
 
-You can use the simple API in simple projects compiling one class at a time.
+You can use the simple API in simple projects compiling and loading one class at a time.
 To do that, the class `com.javax0.sourcebuddy.Compiler` defines a static method `compile()`.
 Here is the line from the example displayed in the introduction using this method:
 
@@ -90,6 +94,20 @@ The method's parameter is the string source code of the class.
 The method's return value is the class compiled and loaded into the JVM.
 
 If there is an error during the compilation, the call will throw a `CompileException` with the error message in the exception message.
+
+There are four overloaded versions of the static `compile()` method.
+Using the previous source code, it can be compiled in four different ways:
+
+{%numberedSample overloaded_versions%}
+
+. Providing only the source code as we have already seen before.
+. Providing the name of the class and the source code.
+This version should be used, when the library cannot figure out the name of the class from the source code.
+The library uses simple pattern matching to find the package and class names in the Java source.
+. The same as the first version, but you can also provide a class for the loaded type.
+This can be used when the class in the source code implements and interface or extends a class which is available during the compile time.
+The returned class object can be cast to that type and the library will do that casting for you.
+. The same as the second version, but again you can provide a class for the casting.
 
 == Fluent API
 
@@ -132,8 +150,9 @@ The class name is required by the JDK compiler.
 To do that it either gets it as an argument or tries to figure out even before compiling the code.
 Use the one without the name, and specify the name only in special cases when {%SB%} cannot identify it.
 
-To add multiple sources, you can call this method one after the other multiple times.
-However, if the sources are in the file system in a directory, you can also call
+To add multiple sources, you can call this method multiple times.
+
+If the sources are in the file system in a directory, you can also call
 
 {%api {%NEXT%}%}
 
@@ -147,10 +166,20 @@ NOTE: The class names are calculated from the directory structure and the name o
 The class name of a single class is calculated the same way as before when the path points to a single file.
 You can also provide the class name as string and a path to a single source file.
 
+The path can also point to an individual file.
+In this case the individual file should contain the source code.
+The class name will be calculated the same way as giving the source from a string.
+If the name of the class cannot be specified then the name can be given as first argument before the path to the file.
+In this case the path has to point to an individual file.
+Pointing to a directory in this case is an error.
+
 === {%STEP%} Hide the class
 
 You can call the method `hidden()` when you want to load a class hidden.
 Hidden and non-hidden classes can be mixed in one {%SB%} compiler object.
+You can either call `hidden()`, `named()`, or `nest()`.
+These calls are optional, but only one of them should be called for a source.
+Different versions of these methods accept arguments to specify lookup object, and class loading configuration.
 
 Loading hidden classes is a complex topic, and it is detailed later in a separate chapter.
 
@@ -190,21 +219,28 @@ The return value of the method `stream()` at this point is `Stream<byte[]>`.
 It is up to you how you use these byte arrays.
 
 Many times you may also need the binary name of the class.
-You can call the static method `getBinaryName()` to get the name.
+You can call the static method `Compiler.getBinaryName()` to get the name.
 It is a utility method that gauges the name of the class from the binary representation.
 You can use this method for any byte code, not only those compiled with the compiler.
 
 NOTE: The `getBinaryName()` implementation supports JVM byte code up to {%@snip JVM_VERSION /(\d+)/%}, which is Java {%@snip JAVA_VERSION /(\d+)/%}.
+Note that these version values are automatically pulled from the source code using Jamal.
+They are always up-to-date in this documentation.
 
 === {%STEP%} Load the classes
 {%#define LOAD_THE_CLASSESS_SECTION={%STEP last%}%}
-Applications want not only to compile the Java classes on the fly but also to load them.
+Applications usually want to load the classes after compilation.
 The aptly named method `load()` can be used to do that.
 
 {%api {%NEXT%}%}
 
 It will load the classes from the memory-stored byte code to the JVM.
 This loading will convert the byte codes to `Class` objects.
+
+The method `load()` get `Compiler.LoaderOption` arguments.
+The possible values are
+
+{%@snip (replace="~\\s+(\\w+),~* `$1`~//~~") LoaderOption%}
 
 When a class was specified to be hidden calling the method `hidden()` after the `from()` method the class is loaded as hidden class.
 link:https://openjdk.org/jeps/371[JEP371] describes hidden classes.
@@ -282,6 +318,11 @@ When you call
 you will get a new instance of the class.
 You can use the simple name of the class assuming that the name is unique in your compilation.
 If you have two or more classes with the same name in different packages you have to use the full name.
+If you only have one single class in your compilation you can omit the name and call `get()` or `newInstance()` without a name.
+
+You can also call the method `newInstance()` specifying the class of the instance in the case the compiled class implements an interface or extends a class.
+The `newInstance()` method also has a version that accepts a `Class` and an `Object` array argument to call a constructor that needs parameters.
+This is unavoidable when you crate a new inner class and make it to be a nest mate of an already existing object.
 
 === {%STEP%} Stream through the class objects
 
@@ -343,7 +384,7 @@ Understanding the details here is not necessary to use the library.
 The simple approach is the following:
 
 . Use the `hidden()` method without a lookup object.
-If the performance is acceptable for your application you are done.
+If the performance and functionality is acceptable for your application you are done.
 . Use the version passing a lookup object and test your performance.
 You may also need to select compiled class' package properly.
 
@@ -368,7 +409,8 @@ It has to have a class,
 * has a method that creates a lookup object and returns it to be used by the class loader.
 
 The class loader fires up a new `Compiler` object and creates a class implementing the `Supplier` interface.
-Then it calls the `Supplier.get()` method to get access to the lookup object.
+The implementation creates a lookup object and returns it.
+The class loader code calls the `Supplier.get()` method to get access to the lookup object.
 Here is the actual code that does that:
 
 {%sample lookup_creation%}
@@ -379,6 +421,40 @@ Here is the actual code that does that:
 ====
 
 Since this process needs a new compiler, source compilation, creating a new class loader object and invoking the created dynamic class object it will take some time that may be significant in some cases.
+
+== Loading Inner Class(es)
+
+To load and add a new inner class to an existing class you need to have the byte code of the inner class.
+Since the outer class in this use case already exists and Java does not provide a syntax to specify an inner class outside the embedding class we have to apply a little trick.
+
+The source code containing the inner class should partially contain the embedding class.
+It does not need to have all the code though.
+It has to have the fields and the methods that the inner class uses.
+The type of the fields and the signature of the methods have to match.
+The content of the methods in the outer class is not important.
+You can usually just leave that empty.
+The inner class or classes inside the outer class should have their Java code.
+After the source code was added to the compiler calling one of the `from()` methods you have to call `nest()`.
+
+Calling `nest()` will inform {%SB%} that the outer class inside the source is a nesting host.
+The inner classes will be loaded automatically as hidden classes.
+The outer class compiled will not be loaded.
+
+The tests of the application contain a demo class:
+
+{%sample OuterClass%}
+
+The test code that creates a new inner class to the already existing outer class is the following:
+
+{%sample InnerClass%}
+
+[NOTE]
+====
+To create and load an inner class to an already existing class you need a lookup object from the already existing class.
+To do that the class implements the `DynExt` interface.
+The method `getLookup()` will provide a lookup object from the same package, from the same module.
+It makes it possible to get an inner class that can be the nest mate of the already existing class.
+====
 
 == Support
 

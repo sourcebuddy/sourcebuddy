@@ -49,7 +49,16 @@ public class TestDemo {
         Class<?> myClassClass = Compiler.compile(source);
         Talker myClass = (Talker) myClassClass.getConstructor().newInstance();
         myClass.say();
-        //end snippet
+        // end snippet
+
+        final var name = "com.sb.demo.MyClass";
+        // snippet overloaded_versions
+        Class<?> objectClassImplicitName = Compiler.compile(source);
+        Class<?> objectClass = Compiler.compile(name, source);
+        Class<Talker> classImplicitName = Compiler.compile(source, Talker.class);
+        Class<Talker> klass = Compiler.compile(name, source, Talker.class);
+        // end snippet
+
     }
 
 

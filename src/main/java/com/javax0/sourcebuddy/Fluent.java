@@ -9,13 +9,13 @@ import java.util.stream.Stream;
 public interface Fluent {
 
     interface AddSource {
-        CanCompile from(Path path) throws IOException, ClassNotFoundException;
+        SpecifyNestHiddenNamed from(Path path) throws IOException, ClassNotFoundException;
 
-        CanCompile from(String binary, Path path);
+        SpecifyNestHiddenNamed from(String binary, Path path);
 
-        CanCompile from(String name, String source);
+        SpecifyNestHiddenNamed from(String name, String source);
 
-        CanCompile from(String source) throws ClassNotFoundException;
+        SpecifyNestHiddenNamed from(String source) throws ClassNotFoundException;
 
         AddSource reset();
     }
@@ -24,9 +24,20 @@ public interface Fluent {
 
         Compiled compile() throws Compiler.CompileException;
 
+    }
+
+    interface SpecifyNestHiddenNamed extends CanCompile {
         CanCompile hidden(MethodHandles.Lookup.ClassOption... classOptions);
 
         CanCompile hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions);
+
+        CanCompile nest(MethodHandles.Lookup.ClassOption... classOptions);
+
+        CanCompile nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions);
+
+        CanCompile named();
+
+        CanCompile named(MethodHandles.Lookup lookup);
     }
 
     interface Compiled {
@@ -35,7 +46,7 @@ public interface Fluent {
 
         byte[] get() throws ClassNotFoundException;
 
-        Compiler.Loaded load() throws ClassNotFoundException;
+        Compiler.Loaded load(Compiler.LoaderOption... options) throws ClassNotFoundException;
 
         void saveTo(Path path);
 

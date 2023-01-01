@@ -20,6 +20,8 @@ public class StringJavaSource extends SimpleJavaFileObject {
      */
     boolean isHidden = false;
 
+    boolean isNest = false;
+
     MethodHandles.Lookup.ClassOption[] classOptions = new MethodHandles.Lookup.ClassOption[0];
     MethodHandles.Lookup lookup = null;
 

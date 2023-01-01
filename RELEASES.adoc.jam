@@ -2,6 +2,12 @@
 == {SB} Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
 
+=== {RELEASE 2.1.0-SNAPSHOT}
+
+The individual classes can be each hidden or named (not hidden).
+Named classes can also be loaded using lookup object.
+Class can be denoted as nesting class mimicking already existing class.
+
 === {RELEASE 2.0.0}
 
 Major restructuring of the class loading structure.

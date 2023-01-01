@@ -1,11 +1,13 @@
 package com.javax0.sourcebuddy;
 
+import com.javax0.sourcebuddytest.OuterClass;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,7 +19,9 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static java.lang.String.format;
+import static com.javax0.sourcebuddy.Compiler.args;
+import static com.javax0.sourcebuddy.Compiler.classes;
+
 
 @DisplayName("Test the simple one source compilation call")
 public class CompilerTest {
@@ -35,8 +39,8 @@ public class CompilerTest {
     @Test
     @DisplayName("source code compiles")
     public void goodSimpleCode() throws Exception {
-        final String source = loadJavaSource("Test1.java");
-        Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test1", source);
+        final String source = loadJavaSource("Test3.java");
+        Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test3", source);
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("a");
         String s = (String) f.invoke(object);
@@ -87,8 +91,8 @@ public class CompilerTest {
     @DisplayName("source code with subclasses works fine")
     public void sourceCodeWithSubclass()
             throws Exception {
-        final String source = loadJavaSource("Test2.java");
-        Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test2", source);
+        final String source = loadJavaSource("Test4.java");
+        Class<?> newClass = Compiler.compile("com.javax0.sourcebuddy.Test4", source);
         Object object = newClass.getConstructor().newInstance();
         Method f = newClass.getMethod("method");
         int i = (int) f.invoke(object, (Object[]) null);
@@ -199,7 +203,7 @@ public class CompilerTest {
         final var target = "./target/test-classes";
         sut.compile().saveTo(Paths.get(target));
         for (int i = 1; i <= N; i++) {
-            final var file = Paths.get(target, format("com/javax0/sourcebuddy/Test%d.class", i));
+            final var file = Paths.get(target, "com/javax0/sourcebuddy/Test%d.class".formatted(i));
             Assertions.assertTrue(Files.exists(file));
             final var byteCode = Files.readAllBytes(file);
             Assertions.assertEquals(byteCode[0], (byte) 0xCA);
@@ -221,7 +225,7 @@ public class CompilerTest {
         sut.compile().load().stream().forEach(klass -> {
             // all that finds were expected
             final var cn = klass.getName();
-            Assertions.assertTrue(classes.remove(cn), format("class '%s' was not expected", cn));
+            Assertions.assertTrue(classes.remove(cn), "class '%s' was not expected".formatted(cn));
         });
         // finds all
         Assertions.assertEquals(0, classes.size());
@@ -231,7 +235,8 @@ public class CompilerTest {
     @DisplayName("get the stream of hidden classes")
     public void getStreamOfHiddenClasses() throws Exception {
         Compiler.java()
-                .from(loadJavaSource("Test1.java"))
+                // an example where a comment before the 'class ...' line messes up the automatic class name detection
+                .from("com.javax0.sourcebuddy.Test1", loadJavaSource("Test1.java"))
                 .hidden(MethodHandles.lookup())
                 .compile()
                 .load()
@@ -242,7 +247,7 @@ public class CompilerTest {
     private Fluent.CanCompile loadTestSources() throws IOException {
         final var source = new ArrayList<String>();
         for (int i = 1; i <= CompilerTest.N; i++) {
-            source.add(loadJavaSource(format("Test%d.java", i)));
+            source.add(loadJavaSource("Test%d.java".formatted(i)));
         }
         var sut = (Fluent.AddSource) Compiler.java();
         for (int i = 1; i <= CompilerTest.N; i++) {
@@ -279,4 +284,108 @@ public class CompilerTest {
                 () -> compiler.from("A", "class A { void lo(){} } ").compile().load().get());
     }
 
+    final static private String PACKAGE_PROTECTED_CLASS = """
+            package com.javax0.sourcebuddy;
+             
+            class PackageClass {
+              void hi(){
+                System.out.println("hi");
+              }
+            }
+            """;
+
+    @Test
+    @DisplayName("Can create class in the same module, not hidden, using lookup object")
+    void createdWithLookup() throws Exception {
+        final var lookup = MethodHandles.lookup();
+        final var loaded = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named(lookup).compile().load();
+        final var hi = loaded.newInstance();
+        final var m = hi.getClass().getDeclaredMethod("hi");
+        System.out.println("createdWithLookup");
+        m.invoke(hi);
+    }
+
+    @Test
+    @DisplayName("Can create class in the same module, not hidden, using lookup object")
+    void createdWithLookup1() throws Exception {
+        final var lookup = MethodHandles.lookup();
+        var loaded = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named(lookup).compile().load();
+        var hi = loaded.newInstance();
+        final var m = hi.getClass().getDeclaredMethod("hi");
+        System.out.println("createdWithLookup");
+        m.invoke(hi);
+        // now the same class is compiled and loaded again, but it was already loaded by the application class loader
+        // and class loading follows the standard strategy: parent first
+        final var loaded1 = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named().compile().load();
+        final var hi1 = loaded1.newInstance();
+        final var m1 = hi1.getClass().getDeclaredMethod("hi");
+        System.out.println("createdWithoutLookup");
+        // although they are in the same package, but they are loaded by different class loaders, and
+        // therefore they are in different modules, cannot call package protected methods
+        m1.invoke(hi1);
+        final var loaded2 = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named().compile().load(Compiler.LoaderOption.REVERSE);
+        final var hi2 = loaded2.newInstance();
+        final var m2 = hi2.getClass().getDeclaredMethod("hi");
+        System.out.println("createdWithoutLookup REVERSE");
+        // although they are in the same package, but they are loaded by different class loaders, and
+        // therefore they are in different modules, cannot call package protected methods
+        Assertions.assertThrows(IllegalAccessException.class, () -> m2.invoke(hi2));
+    }
+
+    private static void printClass(final Class<?> c) {
+        System.out.printf("%s - %s/%s#%s%n", c.getClassLoader(), c.getModule(), c.getPackageName(), c.getSimpleName());
+    }
+
+    @Test
+    @DisplayName("Create inner class for already existing class")
+    void testInnerClassCreation() throws Exception {
+        // snippet InnerClass
+        final var outer = new OuterClass();
+        final var lookup = outer.getLookup();
+        final var inner = Compiler.java().from("""
+                        package com.javax0.sourcebuddytest;
+                                                
+                        public class OuterClass {
+                            private int z=33;
+                                        
+                            public class Inner {
+                               public void a(){
+                                 z++;
+                               }
+                            }
+                                        
+                        }""").nest(lookup, MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                .newInstance("Inner", classes(OuterClass.class), args(outer));
+        final var m = inner.getClass().getDeclaredMethod("a");
+        m.invoke(inner);
+        Assertions.assertEquals(56, outer.getZ());
+        // end snippet
+    }
+
+    @Test
+    @DisplayName("Inner class creation does not wotk without lookup object")
+    void testInnerClassCreationFailure() throws Exception {
+        final var outer = new OuterClass();
+        final var inner = Compiler.java().from("""
+                        package com.javax0.sourcebuddytest;
+                                                
+                        public class OuterClass {
+                            private int z;
+                                        
+                            public class Inner {
+                               public void a(){
+                                 z++;
+                               }
+                            }
+                                        
+                        }""").nest(MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                .newInstance("Inner", classes(OuterClass.class), args(outer));
+        final var m = inner.getClass().getDeclaredMethod("a");
+        try {
+            m.invoke(inner);
+            Assertions.fail("Did not throw exception");
+        }catch (InvocationTargetException ite){
+            Assertions.assertEquals(IllegalAccessError.class, ite.getCause().getClass());
+        }
+    }
 }
