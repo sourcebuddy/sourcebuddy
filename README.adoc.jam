@@ -425,11 +425,11 @@ Since this process needs a new compiler, source compilation, creating a new clas
 == Loading Inner Class(es)
 
 To load and add a new inner class to an existing class you need to have the byte code of the inner class.
-Since the outer class in this use case already exists and Java does not provide a syntax to specify an inner class outside the embedding class we have to apply a little trick.
+Since the outer class in this use case already exists and Java does not provide a syntax to specify an inner class alone, we have to apply a little trick.
 
-The source code containing the inner class should partially contain the embedding class.
+The source code containing the inner class should "partially" contain the embedding class.
 It does not need to have all the code though.
-It has to have the fields and the methods that the inner class uses.
+It has to have the fields and the methods the inner class uses.
 The type of the fields and the signature of the methods have to match.
 The content of the methods in the outer class is not important.
 You can usually just leave that empty.
@@ -438,7 +438,7 @@ After the source code was added to the compiler calling one of the `from()` meth
 
 Calling `nest()` will inform {%SB%} that the outer class inside the source is a nesting host.
 The inner classes will be loaded automatically as hidden classes.
-The outer class compiled will not be loaded.
+The outer class compiled will not be loaded, even if the option `LoadOption.REVERSE` is used.
 
 The tests of the application contain a demo class:
 
@@ -447,6 +447,10 @@ The tests of the application contain a demo class:
 The test code that creates a new inner class to the already existing outer class is the following:
 
 {%sample InnerClass%}
+
+As you can see the class `OuterClass` in the dynamically added source code does not contain the methods.
+It only contains the private `int` field used by the new inner class.
+In the unit tests you can see cases when private methods are called, and also erroneous, failing examples.
 
 [NOTE]
 ====

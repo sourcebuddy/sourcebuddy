@@ -2,8 +2,10 @@
 package com.javax0.sourcebuddy;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,12 +71,13 @@ public class ByteClassLoader extends URLClassLoader {
             byteCode.isHidden = source.isHidden;
             byteCode.classOptions = source.classOptions;
             byteCode.lookup = source.lookup;
-            if( source.isNest ){
+            if (source.isNest) {
+                final var lookup = LookupFetcher.nestLookup(source);
                 final var namePrefix = source.binaryName + "$";
-                for( final var e : map.entrySet()){
-                    if( e.getKey().startsWith(namePrefix)){
+                for (final var e : map.entrySet()) {
+                    if (e.getKey().startsWith(namePrefix)) {
                         e.getValue().isHidden = true;
-                        e.getValue().lookup = source.lookup;
+                        e.getValue().lookup = lookup;
                         e.getValue().classOptions = source.classOptions;
                     }
                 }

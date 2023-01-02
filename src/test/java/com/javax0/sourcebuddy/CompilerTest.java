@@ -1,6 +1,7 @@
 package com.javax0.sourcebuddy;
 
 import com.javax0.sourcebuddytest.OuterClass;
+import com.javax0.sourcebuddytest.OuterClass2;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.javax0.sourcebuddy.Compiler.args;
@@ -337,7 +340,7 @@ public class CompilerTest {
     }
 
     @Test
-    @DisplayName("Create inner class for already existing class")
+    @DisplayName("Create inner class for already existing class, access private field")
     void testInnerClassCreation() throws Exception {
         // snippet InnerClass
         final var outer = new OuterClass();
@@ -361,9 +364,57 @@ public class CompilerTest {
         Assertions.assertEquals(56, outer.getZ());
         // end snippet
     }
+    @Test
+    @DisplayName("Create inner class for already existing class, call private method")
+    void testInnerClassCreation2() throws Exception {
+        final var outer = new OuterClass();
+        final var lookup = outer.getLookup();
+        final var inner = Compiler.java().from("""
+                        package com.javax0.sourcebuddytest;
+                                                
+                        public class OuterClass {
+                            private int z=33;
+                            private void inc(){}                   
+                            public class Inner {
+                               public void a(){
+                                 z++;
+                                 inc();
+                               }
+                            }
+                                        
+                        }""").nest(lookup, MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                .newInstance("Inner", classes(OuterClass.class), args(outer));
+        final var m = inner.getClass().getDeclaredMethod("a");
+        m.invoke(inner);
+        Assertions.assertEquals(57, outer.getZ());
+        // end snippet
+    }
 
     @Test
-    @DisplayName("Inner class creation does not wotk without lookup object")
+    @DisplayName("Inner class creation works with fetched lookup object")
+    void testInnerClassCreationFetchLookup() throws Exception {
+        final var outer = new OuterClass2();
+        final var inner = Compiler.java().from("""
+                        package com.javax0.sourcebuddytest;
+                                                
+                        public class OuterClass2 {
+                            private int z;
+                                        
+                            public class Inner {
+                               public void a(){
+                                 z++;
+                               }
+                            }
+                                        
+                        }""").nest(MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                .newInstance("Inner", classes(OuterClass2.class), args(outer));
+        final var m = inner.getClass().getDeclaredMethod("a");
+        m.invoke(inner);
+        Assertions.assertEquals(56, outer.getZ());
+    }
+
+    @Test
+    @DisplayName("Inner class creation does not work without lookup object")
     void testInnerClassCreationFailure() throws Exception {
         final var outer = new OuterClass();
         final var inner = Compiler.java().from("""
@@ -388,4 +439,33 @@ public class CompilerTest {
             Assertions.assertEquals(IllegalAccessError.class, ite.getCause().getClass());
         }
     }
+
+    @Test
+    @DisplayName("Inner class creation fails when field has different type")
+    void testInnerClassUseFailure() throws Exception {
+        final var outer = new OuterClass();
+        final var lookup = outer.getLookup();
+        final var inner = Compiler.java().from("""
+                        package com.javax0.sourcebuddytest;
+                                                
+                        public class OuterClass {
+                            private long z; // the type of the field does not match the one in the code
+                                        
+                            public class Inner {
+                               public void a(){
+                                 z++;
+                               }
+                            }
+                                        
+                        }""").nest(lookup,MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                .newInstance("Inner", classes(OuterClass.class), args(outer));
+        final var m = inner.getClass().getDeclaredMethod("a");
+        try {
+            m.invoke(inner);
+            Assertions.fail("Did not throw exception");
+        }catch (InvocationTargetException ite){
+            Assertions.assertEquals(NoSuchFieldError.class, ite.getCause().getClass());
+        }
+    }
+
 }
