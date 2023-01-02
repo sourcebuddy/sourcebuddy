@@ -8,6 +8,8 @@
 == Introduction
 .This documentation is about the version {%pom //project/version%} of the software.
 
+{%SB%} is a Java library you can use to compile and load dynamically generated Java source code in your program.
+
 You can compile Java source code you created dynamically in your Java application.
 Your program can create the source code of one or more Java classes, pass the strings to {%SB%} and use the classes.
 An example code is the following:
@@ -15,22 +17,14 @@ An example code is the following:
 {%sample simple_compile%}
 
 {%SB%} is a simple Java source compiler facade in front of the JDK-provided `javac` compiler.
-I designed it for applications creating Java source code on the fly during run-time.
-The JDK API is complex and hard to use.
-There is nothing in {%SB%} you could not do with the JDK alone.
-However, using {%SB%}, it is much simpler.
-This way, you do not need to implement anything except your application logic.
-
-All you need follow the steps as depicted here:
+You need follow the steps as depicted here:
 
 image::images/compile_flow.svg[]
 
-You
-
-. get a `Compiler` object calling the `Compiler.java()`, and from there, all you need is
+. get a `Compiler` object calling `Compiler.java()`, and from there, all you need is
 . specify the source code either as Java strings or files,
 . call `compile()`,
-. fetch the compiled `.class` files as `byte[]`, save to file or the load the classes, OR
+. fetch the compiled `.class` files as `byte[]` byte array, save to file, or the load the classes, and
 . use the class and instances (not on the picture, it is already up to you).
 
 
@@ -112,6 +106,8 @@ The returned class object can be cast to that type and the library will do that 
 == Fluent API
 
 The fluent API is available when there are more files to be compiled.
+
+image::images/fluent-rail.svg[]
 
 To demonstrate the use of the API, we will use the sample code:
 
