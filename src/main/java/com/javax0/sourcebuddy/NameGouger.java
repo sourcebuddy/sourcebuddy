@@ -85,6 +85,7 @@ class NameGouger {
      * @throws IOException when some error happens
      */
     private static void read1(DataInputStream dis) throws IOException {
+        //noinspection ResultOfMethodCallIgnored
         dis.read();
     }
 

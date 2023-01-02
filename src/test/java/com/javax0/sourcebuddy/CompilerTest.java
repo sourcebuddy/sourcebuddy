@@ -17,9 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.javax0.sourcebuddy.Compiler.args;
@@ -36,6 +34,7 @@ public class CompilerTest {
     }
 
     private Path getTest1ResourcePath() {
+        //noinspection DataFlowIssue
         return Paths.get(this.getClass().getResource("Test1.java").getPath());
     }
 
@@ -364,6 +363,7 @@ public class CompilerTest {
         Assertions.assertEquals(56, outer.getZ());
         // end snippet
     }
+
     @Test
     @DisplayName("Create inner class for already existing class, call private method")
     void testInnerClassCreation2() throws Exception {
@@ -374,7 +374,7 @@ public class CompilerTest {
                                                 
                         public class OuterClass {
                             private int z=33;
-                            private void inc(){}                   
+                            private void inc(){}
                             public class Inner {
                                public void a(){
                                  z++;
@@ -435,7 +435,7 @@ public class CompilerTest {
         try {
             m.invoke(inner);
             Assertions.fail("Did not throw exception");
-        }catch (InvocationTargetException ite){
+        } catch (InvocationTargetException ite) {
             Assertions.assertEquals(IllegalAccessError.class, ite.getCause().getClass());
         }
     }
@@ -457,13 +457,13 @@ public class CompilerTest {
                                }
                             }
                                         
-                        }""").nest(lookup,MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                        }""").nest(lookup, MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", classes(OuterClass.class), args(outer));
         final var m = inner.getClass().getDeclaredMethod("a");
         try {
             m.invoke(inner);
             Assertions.fail("Did not throw exception");
-        }catch (InvocationTargetException ite){
+        } catch (InvocationTargetException ite) {
             Assertions.assertEquals(NoSuchFieldError.class, ite.getCause().getClass());
         }
     }

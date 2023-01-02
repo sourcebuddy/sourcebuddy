@@ -34,6 +34,9 @@ import java.util.stream.Stream;
  */
 public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.SpecifyNestHiddenNamed, Fluent.Compiled {
 
+    /**
+     * Class loadig options, {@code REVERSE} and {@code NORMAL}. The default is {@code NORMAL}.
+     */
     public enum LoaderOption {
         // snippet LoaderOption
         REVERSE, // will load the compiled classes first even if a class with the same name is already loaded.
@@ -112,7 +115,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
          * @param <T>     the type of the object used for casting
          * @return the loaded object
          * @throws ClassNotFoundException    if there is no such class
-         * @throws NoSuchMethodException     if the class does not have argumentless constructor
+         * @throws NoSuchMethodException     if the class does not have no-argument constructor
          * @throws InvocationTargetException if the constructor throws an exception
          * @throws InstantiationException    if the object cannot be instantiated
          * @throws IllegalAccessException    if the constructor is not accessible (for example, private)
@@ -125,9 +128,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
                 InstantiationException,
                 IllegalAccessException,
                 ClassCastException {
-            //noinspection unchecked
             final var constructor = get(name).getDeclaredConstructor();
             constructor.setAccessible(true);
+            //noinspection unchecked
             return (T) constructor.newInstance();
         }
 
@@ -137,7 +140,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
          * @param name the binary name of the class or the simple name in the case the simple name is unique.
          * @return the loaded object
          * @throws ClassNotFoundException    if there is no such class
-         * @throws NoSuchMethodException     if the class does not have argumentless constructor
+         * @throws NoSuchMethodException     if the class does not have no-argument constructor
          * @throws InvocationTargetException if the constructor throws an exception
          * @throws InstantiationException    if the object cannot be instantiated
          * @throws IllegalAccessException    if the constructor is not accessible (for example, private)
@@ -176,6 +179,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
                 ClassCastException {
             final var constructor = get(name).getDeclaredConstructor(types);
             constructor.setAccessible(true);
+            //noinspection unchecked
             return (T) constructor.newInstance(args);
         }
 
@@ -188,7 +192,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
          * @param <T>     the type of the object used for casting
          * @return the loaded object
          * @throws ClassNotFoundException    if there is no such class
-         * @throws NoSuchMethodException     if the class does not have argumentless constructor
+         * @throws NoSuchMethodException     if the class does not have no-argument constructor
          * @throws InvocationTargetException if the constructor throws an exception
          * @throws InstantiationException    if the object cannot be instantiated
          * @throws IllegalAccessException    if the constructor is not accessible (for example, private)
@@ -201,9 +205,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
                 InstantiationException,
                 IllegalAccessException,
                 ClassCastException {
-            //noinspection unchecked
             final var constructor = get().getDeclaredConstructor();
             constructor.setAccessible(true);
+            //noinspection unchecked
             return (T) constructor.newInstance();
         }
 
@@ -281,6 +285,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return the loaded class or null if the compilation was not successful
      */
     public static <T> Class<T> compile(final String binaryName, final String sourceCode, final Class<T> ignored) throws CompileException, ClassNotFoundException {
+        //noinspection unchecked
         return (Class<T>) compile(binaryName, sourceCode);
     }
 
@@ -320,6 +325,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return the loaded class or null if the compilation was not successful
      */
     public static <T> Class<T> compile(final String sourceCode, Class<T> ignored) throws CompileException, ClassNotFoundException {
+        //noinspection unchecked
         return (Class<T>) compile(sourceCode);
     }
 

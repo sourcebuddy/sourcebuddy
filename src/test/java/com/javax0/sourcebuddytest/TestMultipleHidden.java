@@ -36,7 +36,7 @@ public class TestMultipleHidden {
                     }
                     """).hidden().compile().load().newInstance("B", IfX.class);
             x.X();
-            Assertions.assertEquals("hello",new String(baos.toByteArray(), StandardCharsets.UTF_8));
+            Assertions.assertEquals("hello", baos.toString(StandardCharsets.UTF_8));
         } finally {
             System.setOut(myOut);
         }

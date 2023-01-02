@@ -2,10 +2,8 @@
 package com.javax0.sourcebuddy;
 
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,30 +14,58 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * Class loader that loads a class from a byte array. This loader can load
- * classes that are passed to the constructor in a map in their compiled binary
+ * Class loader that loads a class from a byte array. This loader loads
+ * classes passed to the constructor in a map in their compiled binary
  * form. The main use of this class loader is to load the class or classes that
  * were generated during the compilation of a single Java source class that may
  * contain inner classes, anonymous classes and thus need the load of more than
  * one class to have the {@code Class} object usable in your Java code.
- *
- * @author Peter Verhas
  */
 public class ByteClassLoader extends URLClassLoader {
-    public static class ClassRecord {
-        private final byte[] code;
-        private Class<?> loadedClass;
+
+    /**
+     * Contains the data for a class that was the result of the compilation.
+     */
+    private static class ClassRecord {
+        /**
+         * The compiled byte code of the class
+         */
+        final byte[] code;
+        /**
+         * The class when the class was already loaded into the JVM.
+         */
+        Class<?> loadedClass;
+        /**
+         * {@code true} if the class is to be loaded hidden.
+         */
         boolean isHidden;
+        /**
+         * The class options to use for hidden classes.
+         */
         MethodHandles.Lookup.ClassOption[] classOptions;
+        /**
+         * The lookup object to use to load the class. If this is {@code null} and the class is not hidden then it
+         * will be loaded by the current class loader the normal way.
+         */
         MethodHandles.Lookup lookup;
 
-        public ClassRecord(final byte[] code) {
+        /**
+         * Create a new record using the byte code and setting the other parameters the default.
+         * @param code is the byte code, must not be {@code null}
+         */
+        ClassRecord(final byte[] code) {
             this.code = Objects.requireNonNull(code);
         }
     }
 
+    /**
+     * All the class records. The key is the canonical name of the class.
+     */
     protected final Map<String, ClassRecord> classRecords;
 
+    /**
+     * The loading options active for this class loader. See {@link com.javax0.sourcebuddy.Compiler.LoaderOption}
+     */
     private final Set<Compiler.LoaderOption> options;
 
     /**
@@ -131,7 +157,7 @@ public class ByteClassLoader extends URLClassLoader {
      * otherwise it will be loaded as a normal class by this classloader.
      *
      * @param record the class record
-     * @throws IllegalAccessException
+     * @throws IllegalAccessException if the class cannot be loaded
      */
     private void loadClassNamed(final ClassRecord record) throws IllegalAccessException {
         if (record.lookup != null) {

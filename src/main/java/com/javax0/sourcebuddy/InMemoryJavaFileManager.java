@@ -10,11 +10,10 @@ import java.util.Map;
 
 public class InMemoryJavaFileManager extends
         ForwardingJavaFileManager<StandardJavaFileManager> {
-    private final Map<String, MemoryFileObject> classFilesMap;
+    private final Map<String, MemoryFileObject> classFilesMap = new HashMap<>();
 
     protected InMemoryJavaFileManager(final StandardJavaFileManager fileManager) {
         super(fileManager);
-        classFilesMap = new HashMap<>();
     }
 
     public Map<String, MemoryFileObject> getClassFileObjectsMap() {
@@ -26,7 +25,7 @@ public class InMemoryJavaFileManager extends
                                                final String className,
                                                final Kind kind,
                                                final FileObject sibling) {
-        MemoryFileObject fileObject = new MemoryFileObject(className);
+        final var fileObject = new MemoryFileObject(className);
         classFilesMap.put(className, fileObject);
         return fileObject;
     }
