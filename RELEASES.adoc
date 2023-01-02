@@ -2,7 +2,7 @@
 == SourceBuddy Release history
 
 
-=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.1.0-SNAPSHOT[2.1.0-SNAPSHOT]
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.1.0[2.1.0]
 
 The individual classes can be each hidden or named (not hidden).
 Named classes can also be loaded using lookup object.

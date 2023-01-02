@@ -158,16 +158,12 @@ It is the directory where the directory structure matching the Java package stru
 You can have many calls to this method if you have multiple source trees on the disk.
 You can also add some sources as strings, individually and others scanned from the file system.
 
-NOTE: The class names are calculated from the directory structure and the name of the file.
+[NOTE]
+====
+The class names are calculated from the directory structure and the name of the file.
 The class name of a single class is calculated the same way as before when the path points to a single file.
 You can also provide the class name as string and a path to a single source file.
-
-The path can also point to an individual file.
-In this case the individual file should contain the source code.
-The class name will be calculated the same way as giving the source from a string.
-If the name of the class cannot be specified then the name can be given as first argument before the path to the file.
-In this case the path has to point to an individual file.
-Pointing to a directory in this case is an error.
+====
 
 === {%STEP%} Hide the class
 

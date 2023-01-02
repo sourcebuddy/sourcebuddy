@@ -6,7 +6,7 @@
 
 
 == Introduction
-.This documentation is about the version 2.1.0-SNAPSHOT of the software.
+.This documentation is about the version 2.1.0 of the software.
 
 SourceBuddy is a Java library you can use to compile and load dynamically generated Java source code in your program.
 
@@ -83,7 +83,7 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>2.1.0-SNAPSHOT</version>
+    <version>2.1.0</version>
 </dependency>
 ----
 
@@ -220,16 +220,12 @@ It is the directory where the directory structure matching the Java package stru
 You can have many calls to this method if you have multiple source trees on the disk.
 You can also add some sources as strings, individually and others scanned from the file system.
 
-NOTE: The class names are calculated from the directory structure and the name of the file.
+[NOTE]
+====
+The class names are calculated from the directory structure and the name of the file.
 The class name of a single class is calculated the same way as before when the path points to a single file.
 You can also provide the class name as string and a path to a single source file.
-
-The path can also point to an individual file.
-In this case the individual file should contain the source code.
-The class name will be calculated the same way as giving the source from a string.
-If the name of the class cannot be specified then the name can be given as first argument before the path to the file.
-In this case the path has to point to an individual file.
-Pointing to a directory in this case is an error.
+====
 
 === 3.  Hide the class
 
@@ -664,3 +660,4 @@ I will react and help you as much as I can afford.
 You are welcome to open tickets in GitHub if you have any question, but also for suggestions and only if you like the tool.
 Usually I struggle with lacking the information about how many are using my tools.
 Do not leave me in the dark.
+

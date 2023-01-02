@@ -2,7 +2,7 @@
 == {SB} Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
 
-=== {RELEASE 2.1.0-SNAPSHOT}
+=== {RELEASE 2.1.0}
 
 The individual classes can be each hidden or named (not hidden).
 Named classes can also be loaded using lookup object.
