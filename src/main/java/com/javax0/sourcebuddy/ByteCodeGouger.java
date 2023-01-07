@@ -4,12 +4,39 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-class NameGouger {
+class ByteCodeGouger {
     // snipline JVM_VERSION
     private final static int JVM_VERSION = 63;
     // snipline JAVA_VERSION
     private final static int JAVA_VERSION = 19;
-    private static int t;
+
+    static boolean magicOk(byte[] byteCode) {
+        try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {
+            final var magic = is.readInt();
+            return magic == 0xCAFEBABE;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static int major(byte[] byteCode) {
+        try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {
+            final var magic = is.readInt();
+            @SuppressWarnings("unused") final var minor = is.readUnsignedShort();
+            return is.readUnsignedShort();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static int minor(byte[] byteCode) {
+        try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {
+            final var magic = is.readInt();
+            return is.readUnsignedShort();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Get the binary name of the class from the compiled byte code array.

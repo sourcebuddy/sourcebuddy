@@ -49,6 +49,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
         // end snippet
     }
 
+    private final List<String> compilerOptions = new ArrayList<>();
+    private final List<String> classesAnnotated = new ArrayList<>();
+
     /**
      * Exception type that the compilation process throws if the source code cannot be compiled. The message of the
      * exception is the compiler error message.
@@ -523,15 +526,40 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
     }
 
     /**
+     * Add options to the compiler.
+     *
+     * @param options
+     * @return
+     */
+    @Override
+    public Fluent.CanCompile options(String... options) {
+        compilerOptions.addAll(List.of(options));
+        return this;
+    }
+
+    /**
+     * Add the names of the annotated classes to the compiler.
+     *
+     * @param classes
+     * @return
+     */
+    @Override
+    public Fluent.CanCompile annotatedClasses(String... classes) {
+        classesAnnotated.addAll(List.of(classes));
+        return this;
+    }
+
+    /**
      * Compile the collected sources.
      *
      * @return the fluent object for the further call chaining
      * @throws CompileException if there was an error during the compilation
      */
-    public Compiler compile() throws CompileException {
+    @Override
+    public Compiler compile(String... options) throws CompileException {
 
         final var sw = new StringWriter();
-        final var task = compiler.getTask(sw, manager, null, null, null, sources);
+        final var task = compiler.getTask(sw, manager, null, compilerOptions, classesAnnotated, sources);
         final var compileOK = task.call();
         if (compileOK) {
             state = CompilationState.SUCCESS;
@@ -622,7 +650,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return the name of the class
      */
     public static String getBinaryName(byte[] byteCode) {
-        return NameGouger.getBinaryName(byteCode);
+        return ByteCodeGouger.getBinaryName(byteCode);
     }
 
     /**

@@ -18,11 +18,18 @@ public interface Fluent {
         SpecifyNestHiddenNamed from(String source) throws ClassNotFoundException;
 
         AddSource reset();
+
+        CanCompile options(String... options);
+
+        CanCompile annotatedClasses(String... options);
     }
 
     interface CanCompile extends AddSource {
+        CanCompile annotatedClasses(String... options);
 
-        Compiled compile() throws Compiler.CompileException;
+        CanCompile options(String... options);
+
+        Compiled compile(String... options) throws Compiler.CompileException;
 
     }
 
