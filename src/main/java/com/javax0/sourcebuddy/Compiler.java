@@ -163,6 +163,32 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
             return constructor.newInstance();
         }
 
+        /**
+         * Create a new instance of a non-static inner class.
+         *
+         * @param name  the name of the class to create.
+         * @param outer the instance of the outer class to which this instance is added to.
+         *              It can be an instance of a subclass of the nest host of the inner class.
+         * @return the new instance of the inner class
+         * @throws ClassNotFoundException    when exception happens
+         * @throws NoSuchMethodException     when exception happens
+         * @throws InvocationTargetException when exception happens
+         * @throws InstantiationException    when exception happens
+         * @throws IllegalAccessException    when exception happens
+         * @throws ClassCastException        when exception happens
+         */
+        public Object newInstance(final String name, Object outer) throws ClassNotFoundException,
+                NoSuchMethodException,
+                InvocationTargetException,
+                InstantiationException,
+                IllegalAccessException,
+                ClassCastException {
+            final var klass = get(name);
+            final var constructor = klass.getDeclaredConstructor(klass.getNestHost());
+            constructor.setAccessible(true);
+            return constructor.newInstance(outer);
+        }
+
         public Object newInstance(final String name, Class<?>[] types, Object[] args)
                 throws ClassNotFoundException,
                 NoSuchMethodException,

@@ -414,6 +414,29 @@ public class CompilerTest {
     }
 
     @Test
+    @DisplayName("Inner class creation works new instance creation special for inner classes")
+    void testInnerClassCreationNewInstance() throws Exception {
+        final var outer = new OuterClass2(){}; // anonymous children class, not the same class as the nesting host, but compatible
+        final var inner = Compiler.java().from("""
+                        package com.javax0.sourcebuddytest;
+                                                
+                        public class OuterClass2 {
+                            private int z;
+                                        
+                            public class Inner {
+                               public void a(){
+                                 z++;
+                               }
+                            }
+                                        
+                        }""").nest(MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
+                .newInstance("Inner", outer);
+        final var m = inner.getClass().getDeclaredMethod("a");
+        m.invoke(inner);
+        Assertions.assertEquals(56, outer.getZ());
+    }
+
+    @Test
     @DisplayName("Inner class creation does not work without lookup object")
     void testInnerClassCreationFailure() throws Exception {
         final var outer = new OuterClass();
