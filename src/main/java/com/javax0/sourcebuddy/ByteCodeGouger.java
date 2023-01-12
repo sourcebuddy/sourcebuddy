@@ -22,6 +22,9 @@ class ByteCodeGouger {
     static int major(byte[] byteCode) {
         try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {
             final var magic = is.readInt();
+            if (magic != 0xCAFEBABE) {
+                throw new RuntimeException("Class file header is missing.");
+            }
             @SuppressWarnings("unused") final var minor = is.readUnsignedShort();
             return is.readUnsignedShort();
         } catch (IOException e) {
@@ -32,6 +35,9 @@ class ByteCodeGouger {
     static int minor(byte[] byteCode) {
         try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {
             final var magic = is.readInt();
+            if (magic != 0xCAFEBABE) {
+                throw new RuntimeException("Class file header is missing.");
+            }
             return is.readUnsignedShort();
         } catch (IOException e) {
             throw new RuntimeException(e);

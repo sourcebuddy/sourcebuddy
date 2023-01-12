@@ -22,7 +22,7 @@ VERSION=2.2.0-SNAPSHOT                    -- https://repo.maven.apache.org/maven
 
 GROUPID=com.javax0.sourcebuddy            -- the project groupId.
 
-MODULE_PREFIX=sourcebuddy.                -- module names are jamal.XXX
+MODULE_PREFIX=sourcebuddy.                -- module names are sourcebuddy.XXXX
 PACKAGE_PREFIX=javax0.sourcebuddy.        -- package names are less restrictive and it is not likely that anyone else would use javax0 as top level package
 
 JAVA_RELEASE=17
