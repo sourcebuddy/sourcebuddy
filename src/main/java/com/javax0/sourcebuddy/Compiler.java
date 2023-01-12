@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -498,6 +500,22 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
         return this;
     }
 
+    /**
+     * Specify that the last added source is a nest host. The class itself will not be loaded, only the inner
+     * class or classes are there to be loaded. The code, which is part of the outer class is only needed to
+     * have a compilable inner class for an already existing class.
+     * <p>
+     * NOTE: This version makes it possible to specify a lookup object. The recommended way is using the version
+     * that does not have this parameter. That version will look at the name of the nest class and reflectively will
+     * fetch the lookup object from the class. The requirement is that the nest class has a static field or a static
+     * method that has {@code MethodHandles.Lookup} (return) type.
+     *
+     * @param lookup       is the lookup object to be used later loading the class
+     * @param classOptions the class options when loading the class. The option {@link
+     *                     java.lang.invoke.MethodHandles.Lookup.ClassOption#NESTMATE} is default, the caller does not
+     *                     need to specify here.
+     * @return this
+     */
     @Override
     public Fluent.CanCompile nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
         if (sources.size() == 0) {
@@ -506,7 +524,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
         final var lastSource = sources.get(sources.size() - 1);
         lastSource.isNest = true;
         lastSource.lookup = lookup;
-        lastSource.classOptions = classOptions;
+        final var oset = new HashSet<>(Arrays.asList(classOptions));
+        oset.add(MethodHandles.Lookup.ClassOption.NESTMATE);
+        lastSource.classOptions = oset.toArray(MethodHandles.Lookup.ClassOption[]::new);
         return this;
     }
 
@@ -520,6 +540,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
         return hidden(null, classOptions);
     }
 
+    /**
+     * Specify that the last added source is a nest host. The class itself will not be loaded, only the inner
+     * class or classes are there to be loaded. The code, which is part of the outer class is only needed to
+     * have a compilable inner class for an already existing class.
+     *
+     * @param classOptions the class options when loading the class. The option {@link
+     *                     java.lang.invoke.MethodHandles.Lookup.ClassOption#NESTMATE} is default, the caller does not
+     *                     need to specify here.
+     * @return this
+     */
     @Override
     public Fluent.CanCompile nest(MethodHandles.Lookup.ClassOption... classOptions) {
         return nest(null, classOptions);
@@ -529,7 +559,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * Add options to the compiler.
      *
      * @param options
-     * @return
+     * @return this
      */
     @Override
     public Fluent.CanCompile options(String... options) {
