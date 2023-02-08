@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  *
  * @author Peter Verhas
  */
-public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.SpecifyNestHiddenNamed, Fluent.Compiled {
+public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.CanCompile, Fluent.SpecifyNestHiddenNamed, Fluent.Compiled {
 
     /**
      * Class loadig options, {@code REVERSE} and {@code NORMAL}. The default is {@code NORMAL}.
@@ -52,7 +52,23 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
     }
 
     private final List<String> compilerOptions = new ArrayList<>();
+    private final static List<String> pathOptions = new ArrayList<>();
+
+    static {
+        if (System.getProperty("jdk.module.path") != null) {
+            pathOptions.add("--module-path");
+            pathOptions.add(System.getProperty("jdk.module.path"));
+        }
+        if (System.getProperty("java.class.path") != null) {
+            pathOptions.add("--class-path");
+            pathOptions.add(System.getProperty("java.class.path"));
+        }
+    }
+
+    private boolean isolated = false;
+
     private final List<String> classesAnnotated = new ArrayList<>();
+    private final List<String> modules = new ArrayList<>();
 
     /**
      * Exception type that the compilation process throws if the source code cannot be compiled. The message of the
@@ -75,7 +91,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
                 throw new RuntimeException("Loading a class is only possible after successful compilation.");
             }
             for (final var source : sources) {
-                classLoader.loadClass(source.binaryName);
+                if (!source.isModuleInfo()) {
+                    classLoader.loadClass(source.binaryName);
+                }
             }
         }
 
@@ -499,12 +517,12 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
     }
 
     @Override
-    public Fluent.CanCompile named() {
+    public Fluent.CanIsolate named() {
         return this;
     }
 
     @Override
-    public Fluent.CanCompile named(MethodHandles.Lookup lookup) {
+    public Fluent.CanIsolate named(MethodHandles.Lookup lookup) {
         if (sources.size() == 0) {
             throw new RuntimeException("There is no source added, this is an internal error.");
         }
@@ -515,7 +533,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
     }
 
     @Override
-    public Fluent.CanCompile hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
+    public Fluent.CanIsolate hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
         if (sources.size() == 0) {
             throw new RuntimeException("There is no source added, this is an internal error.");
         }
@@ -543,7 +561,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return this
      */
     @Override
-    public Fluent.CanCompile nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
+    public Fluent.CanIsolate nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
         if (sources.size() == 0) {
             throw new RuntimeException("There is no source added, this is an internal error.");
         }
@@ -562,7 +580,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return the fluent object for the further call chaining
      */
     @Override
-    public Fluent.CanCompile hidden(MethodHandles.Lookup.ClassOption... classOptions) {
+    public Fluent.CanIsolate hidden(MethodHandles.Lookup.ClassOption... classOptions) {
         return hidden(null, classOptions);
     }
 
@@ -577,7 +595,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return this
      */
     @Override
-    public Fluent.CanCompile nest(MethodHandles.Lookup.ClassOption... classOptions) {
+    public Fluent.CanIsolate nest(MethodHandles.Lookup.ClassOption... classOptions) {
         return nest(null, classOptions);
     }
 
@@ -588,20 +606,43 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
      * @return this
      */
     @Override
-    public Fluent.CanCompile options(String... options) {
+    public Fluent.CanIsolate options(String... options) {
         compilerOptions.addAll(List.of(options));
+        return this;
+    }
+
+    /**
+     * Add the names of the modules to the compiler.
+     *
+     * @param modules the names of the modules
+     * @return this
+     */
+    @Override
+    public Fluent.AddSource modules(String... modules) {
+        this.modules.addAll(List.of(modules));
         return this;
     }
 
     /**
      * Add the names of the annotated classes to the compiler.
      *
-     * @param classes
-     * @return
+     * @param classes the classes which are annotated
+     * @return this
      */
     @Override
-    public Fluent.CanCompile annotatedClasses(String... classes) {
+    public Fluent.CanIsolate annotatedClasses(String... classes) {
         classesAnnotated.addAll(List.of(classes));
+        return this;
+    }
+
+    /**
+     * Tell the compiler <b>not</b> to add the classpath and the module path to the compiler options.
+     *
+     * @return this
+     */
+    @Override
+    public Fluent.CanCompile isolate() {
+        isolated = true;
         return this;
     }
 
@@ -615,7 +656,12 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
     public Compiler compile(String... options) throws CompileException {
 
         final var sw = new StringWriter();
-        final var task = compiler.getTask(sw, manager, null, compilerOptions, classesAnnotated, sources);
+        final var finalCompilerOptions = new ArrayList<>(compilerOptions);
+        if (!isolated) {
+            finalCompilerOptions.addAll(pathOptions);
+        }
+        final var task = compiler.getTask(sw, manager, null, finalCompilerOptions, classesAnnotated, sources);
+        task.addModules(modules);
         final var compileOK = task.call();
         if (compileOK) {
             state = CompilationState.SUCCESS;
@@ -779,7 +825,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanCompile, Fluent.Spe
         return binaryName;
     }
 
-    private String getBinaryNameFromSource(final String sourceCode) throws ClassNotFoundException {
+    public static String getBinaryNameFromSource(final String sourceCode) throws ClassNotFoundException {
         final var packageMatcher = PACKAGE_PATTERN.matcher(sourceCode);
         final var classMatcher = CLASS_PATTERN.matcher(sourceCode);
         if (packageMatcher.find() && classMatcher.find()) {

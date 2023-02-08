@@ -39,6 +39,7 @@ public class ByteClassLoader extends URLClassLoader {
          * {@code true} if the class is to be loaded hidden.
          */
         boolean isHidden;
+
         /**
          * The class options to use for hidden classes.
          */

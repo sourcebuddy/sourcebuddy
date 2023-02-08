@@ -51,5 +51,9 @@ public class StringJavaSource extends SimpleJavaFileObject {
     public String toString() {
         return binaryName;
     }
+
+    public boolean isModuleInfo() {
+        return binaryName.equals("module-info");
+    }
 }
 

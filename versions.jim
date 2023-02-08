@@ -18,7 +18,7 @@ $x
 --
 --------------------------------------------------------------------------------------------------------------------
 
-VERSION=2.2.0-SNAPSHOT                    -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
+VERSION=2.2.0                    -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
 
 GROUPID=com.javax0.sourcebuddy            -- the project groupId.
 

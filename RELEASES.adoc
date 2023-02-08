@@ -2,6 +2,11 @@
 == SourceBuddy Release history
 
 
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.2.0[2.2.0]
+
+You can add modules to the compilation unit using the `modules()` method.
+Class and module path are added automatically to the compiler options unless you call `isolate()`.
+
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.1.0[2.1.0]
 
 The individual classes can be each hidden or named (not hidden).

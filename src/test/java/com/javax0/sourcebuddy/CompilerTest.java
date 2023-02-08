@@ -246,7 +246,7 @@ public class CompilerTest {
                 .forEach(klass -> Assertions.assertNull(klass.getCanonicalName()));
     }
 
-    private Fluent.CanCompile loadTestSources() throws IOException {
+    private Fluent.CanIsolate loadTestSources() throws IOException {
         final var source = new ArrayList<String>();
         for (int i = 1; i <= CompilerTest.N; i++) {
             source.add(loadJavaSource("Test%d.java".formatted(i)));
@@ -255,7 +255,7 @@ public class CompilerTest {
         for (int i = 1; i <= CompilerTest.N; i++) {
             sut = sut.from("com.javax0.sourcebuddy.Test%d".formatted(i), source.get(i - 1));
         }
-        return (Fluent.CanCompile) sut;
+        return (Fluent.CanIsolate) sut;
     }
 
     @Test
@@ -303,7 +303,6 @@ public class CompilerTest {
         final var loaded = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named(lookup).compile().load();
         final var hi = loaded.newInstance();
         final var m = hi.getClass().getDeclaredMethod("hi");
-        System.out.println("createdWithLookup");
         m.invoke(hi);
     }
 
@@ -314,21 +313,18 @@ public class CompilerTest {
         var loaded = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named(lookup).compile().load();
         var hi = loaded.newInstance();
         final var m = hi.getClass().getDeclaredMethod("hi");
-        System.out.println("createdWithLookup");
         m.invoke(hi);
         // now the same class is compiled and loaded again, but it was already loaded by the application class loader
         // and class loading follows the standard strategy: parent first
         final var loaded1 = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named().compile().load();
         final var hi1 = loaded1.newInstance();
         final var m1 = hi1.getClass().getDeclaredMethod("hi");
-        System.out.println("createdWithoutLookup");
         // although they are in the same package, but they are loaded by different class loaders, and
         // therefore they are in different modules, cannot call package protected methods
         m1.invoke(hi1);
         final var loaded2 = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named().compile().load(Compiler.LoaderOption.REVERSE);
         final var hi2 = loaded2.newInstance();
         final var m2 = hi2.getClass().getDeclaredMethod("hi");
-        System.out.println("createdWithoutLookup REVERSE");
         // although they are in the same package, but they are loaded by different class loaders, and
         // therefore they are in different modules, cannot call package protected methods
         Assertions.assertThrows(IllegalAccessException.class, () -> m2.invoke(hi2));

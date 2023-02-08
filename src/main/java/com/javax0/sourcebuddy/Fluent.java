@@ -19,32 +19,35 @@ public interface Fluent {
 
         AddSource reset();
 
-        CanCompile options(String... options);
+        CanIsolate options(String... options);
 
-        CanCompile annotatedClasses(String... options);
+        CanIsolate annotatedClasses(String... options);
+
+        AddSource modules(String ... modules);
     }
 
-    interface CanCompile extends AddSource {
-        CanCompile annotatedClasses(String... options);
-
-        CanCompile options(String... options);
+    interface CanIsolate extends AddSource {
 
         Compiled compile(String... options) throws Compiler.CompileException;
-
+        CanCompile isolate();
     }
 
-    interface SpecifyNestHiddenNamed extends CanCompile {
-        CanCompile hidden(MethodHandles.Lookup.ClassOption... classOptions);
+    interface CanCompile extends CanIsolate {
+        Compiled compile(String... options) throws Compiler.CompileException;
+    }
 
-        CanCompile hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions);
+    interface SpecifyNestHiddenNamed extends CanIsolate {
+        CanIsolate hidden(MethodHandles.Lookup.ClassOption... classOptions);
 
-        CanCompile nest(MethodHandles.Lookup.ClassOption... classOptions);
+        CanIsolate hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions);
 
-        CanCompile nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions);
+        CanIsolate nest(MethodHandles.Lookup.ClassOption... classOptions);
 
-        CanCompile named();
+        CanIsolate nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions);
 
-        CanCompile named(MethodHandles.Lookup lookup);
+        CanIsolate named();
+
+        CanIsolate named(MethodHandles.Lookup lookup);
     }
 
     interface Compiled {

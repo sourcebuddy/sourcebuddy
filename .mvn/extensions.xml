@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
 This file was generated from extensions.jam in the same directory as extensions.xml
-The current version of Jamal is 1.12.5-SNAPSHOT.
-The latest version is 1.12.4.
+The current version of Jamal is 1.12.7-SNAPSHOT.
+The latest version is 1.12.6.
 --><extensions>
     <extension>
         <groupId>com.javax0.jamal</groupId>
         <artifactId>jamal-maven-extension</artifactId>
-        <version>1.12.4</version>
+        <version>1.12.6</version>
     </extension>
 </extensions>
