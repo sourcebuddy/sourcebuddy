@@ -6,9 +6,9 @@ import java.io.IOException;
 
 class ByteCodeGouger {
     // snipline JVM_VERSION
-    private final static int JVM_VERSION = 63;
+    private final static int JVM_VERSION = 64;
     // snipline JAVA_VERSION
-    private final static int JAVA_VERSION = 19;
+    private final static int JAVA_VERSION = 20;
 
     static boolean magicOk(byte[] byteCode) {
         try (final var is = new DataInputStream(new ByteArrayInputStream(byteCode))) {

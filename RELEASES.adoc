@@ -2,6 +2,10 @@
 == SourceBuddy Release history
 
 
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.2.1-SNAPSHOT[2.2.1-SNAPSHOT]
+
+Adding support for Java 20.
+
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.2.0[2.2.0]
 
 You can add modules to the compilation unit using the `modules()` method.
