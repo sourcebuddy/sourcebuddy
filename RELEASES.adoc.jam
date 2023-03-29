@@ -2,7 +2,7 @@
 == {SB} Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
 
-=== {RELEASE 2.2.1-SNAPSHOT}
+=== {RELEASE 2.3.0}
 
 Adding support for Java 20.
 
