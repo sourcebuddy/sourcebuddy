@@ -660,4 +660,3 @@ I will react and help you as much as I can afford.
 You are welcome to open tickets in GitHub if you have any question, but also for suggestions and only if you like the tool.
 Usually I struggle with lacking the information about how many are using my tools.
 Do not leave me in the dark.
-
