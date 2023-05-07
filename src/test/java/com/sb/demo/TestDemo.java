@@ -41,7 +41,7 @@ public class TestDemo {
                 package com.sb.demo;
                                 
                 public class MyClass implements Talker {
-                    @Override
+                    @Override // comment
                     public void say() {
                         System.out.println("Hello, Buddy!");
                   }

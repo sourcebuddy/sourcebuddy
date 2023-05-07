@@ -2,9 +2,11 @@
 == SourceBuddy Release history
 
 
-=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.3.1-SNAPSHOT[2.3.1-SNAPSHOT]
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.3.1[2.3.1]
 
-The next bugfix release.
+Bug fixed.
+In previous releases, you could not get the stream of loaded classes when there was a `module-info.java` file.
+The creation of the `Loaded` object avoided loading the binary for the `module-info` but the stream creation did not.
 
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.3.0[2.3.0]
 
@@ -18,13 +20,13 @@ Class and module path are added automatically to the compiler options unless you
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.1.0[2.1.0]
 
 The individual classes can be each hidden or named (not hidden).
-Named classes can also be loaded using lookup object.
+Named classes can also be loaded using a lookup object.
 Class can be denoted as nesting class mimicking already existing class.
 
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.0.0[2.0.0]
 
 Major restructuring of the class loading structure.
-With this release hidden and non-hidden classes can be mixed.
+With this release, hidden and non-hidden classes can be mixed.
 There is no more `loadHidden()` method supported.
 Instead, you can call `hidden()` for each added source separately.
 
@@ -33,7 +35,7 @@ Since this change, removing a method from the API? is not backward compatible, t
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/1.1.1[1.1.1]
 
 Fix to cache some resources.
-Prior version had a bug not storing created methods handles in the cache.
+Prior versions had a bug not storing created methods handles in the cache.
 
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/1.1.0[1.1.0]
 

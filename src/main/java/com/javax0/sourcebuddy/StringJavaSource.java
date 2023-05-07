@@ -8,6 +8,7 @@ import java.net.URI;
  * A file object used to represent source coming from a string.
  */
 public class StringJavaSource extends SimpleJavaFileObject {
+    public static final String MODULE_INFO = "module-info";
     /**
      * The source code of this "file".
      */
@@ -53,7 +54,7 @@ public class StringJavaSource extends SimpleJavaFileObject {
     }
 
     public boolean isModuleInfo() {
-        return binaryName.equals("module-info");
+        return binaryName.equals(MODULE_INFO);
     }
 }
 

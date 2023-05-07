@@ -278,13 +278,15 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
          * @return the stream object.
          */
         public Stream<Class<?>> stream() {
-            return manager.getClassFileObjectsMap().keySet().stream().map(binaryName -> {
-                try {
-                    return get(binaryName);
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            return manager.getClassFileObjectsMap().keySet().stream()
+                    .filter(binaryName -> !binaryName.equals(StringJavaSource.MODULE_INFO))
+                    .map(binaryName -> {
+                        try {
+                            return get(binaryName);
+                        } catch (ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
         }
 
     }
