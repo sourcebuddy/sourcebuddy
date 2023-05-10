@@ -6,7 +6,7 @@
 
 
 == Introduction
-.This documentation is about the version 2.3.1 of the software.
+.This documentation is about the version 2.4.0-SNAPSHOT of the software.
 
 SourceBuddy is a Java library you can use to compile and load dynamically generated Java source code in your program.
 
@@ -83,7 +83,7 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>2.3.1</version>
+    <version>2.4.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -317,6 +317,9 @@ The possible values are
 * `NORMAL`  is the default.
          Consult the parent class loader first to load classes.
          The compiler's class loader is used only if the other class loaders could not load the class.
+* `SLOPPY`  to allow sloppy loading.
+         Loading the compiled classes may fail if a class cannot be loaded.
+         This option will ignore the errors and will try to load the classes that can be loaded.
 
 
 When a class was specified to be hidden calling the method `hidden()` after the `from()` method the class is loaded as hidden class.
@@ -328,7 +331,7 @@ On the other hand, `getCanonicalName()` will return `null`.
 `getCanonicalName()` returns the format of the name used in the Java source code to refer to the class.
 Since it is `null` you cannot reference these classes.
 
-NOTE: Even though these classes "have no name" you still have to give them some name following the `class` keyword.
+NOTE: Even though these classes "have no name", you still have to give them some name following the `class` keyword.
 This name for the Java run-time is not interesting.
 You can load many hidden classes in the source code with the same name.
 SourceBuddy, on the other hand, needs a distinguishing name unique inside one compiler object.
@@ -370,12 +373,18 @@ Calling the method `loadHidden()` without a lookup object is more resource inten
 [NOTE]
 ====
 The hidden class loading can also have `ClassOption` vararg arguments.
-These control whether a loaded hidden class becomes attached to the classloader and to be a member of a nest host.
+These arguments control whether a loaded hidden class becomes attached to the classloader and to be a member of a nest host.
 To accommodate the possibility, the methods `hidden(ClassOption... options)` and `hidden(MethodHandles.Lookup lookup, ClassOption... options)` also accepts these as vararg parameters.
 ====
 
 Note that the method `load()` returns objects which handle the loaded classes.
 These are not the compiler object.
+You can get the loaded classes as a stream calling `stream()` on this object.
+
+If you used the loader option `SLOPPY` it may be wise to call `boolean fullyLoaded()` on the returned object.
+This will tell if there were any classes not loaded.
+You can also get the binary names of these classes calling `Stream<String> streamFailed()`.
+
 
 === 8.  Get access to the classes
 

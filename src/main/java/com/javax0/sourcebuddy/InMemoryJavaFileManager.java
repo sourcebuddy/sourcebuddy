@@ -5,15 +5,22 @@ import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardJavaFileManager;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class InMemoryJavaFileManager extends
         ForwardingJavaFileManager<StandardJavaFileManager> {
+
+    final static StandardJavaFileManager fake = new FakeFileManager();
+
     private final Map<String, MemoryFileObject> classFilesMap = new HashMap<>();
 
     protected InMemoryJavaFileManager(final StandardJavaFileManager fileManager) {
-        super(fileManager);
+        super(fileManager == null ? fake : fileManager);
     }
 
     public Map<String, MemoryFileObject> getClassFileObjectsMap() {

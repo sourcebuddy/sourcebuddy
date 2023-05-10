@@ -1,6 +1,16 @@
 {@import samplemacros.jim}
-== {SB} Release history
+== pass:[{SB}] Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
+
+=== {RELEASE 2.4.0}
+
+This release can be used to load byte code compiled outside the scope of the compiler object.
+This means new method `byteCode()` added to the `Compiler` object.
+Along with this, there is a new method `canCompile()` to check if the compiler is available on the platform.
+
+=== {RELEASE 2.3.2}
+
+Minor bug fix.
 
 === {RELEASE 2.3.1}
 
@@ -30,7 +40,7 @@ With this release, hidden and non-hidden classes can be mixed.
 There is no more `loadHidden()` method supported.
 Instead, you can call `hidden()` for each added source separately.
 
-Since this change, removing a method from the API? is not backward compatible, this is a new major version.
+Since this change, removing a method from the API is not backward compatible, this is a new major version.
 
 === {RELEASE 1.1.1}
 

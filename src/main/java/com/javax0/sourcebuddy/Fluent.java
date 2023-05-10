@@ -1,6 +1,7 @@
 package com.javax0.sourcebuddy;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -9,6 +10,12 @@ import java.util.stream.Stream;
 public interface Fluent {
 
     interface AddSource {
+        boolean canCompile();
+
+        Compiled byteCode(byte[] code) throws IOException;
+        Compiled byteCode(InputStream is) throws IOException;
+        Compiled byteCode(Path classpath) throws IOException;
+
         SpecifyNestHiddenNamed from(Path path) throws IOException, ClassNotFoundException;
 
         SpecifyNestHiddenNamed from(String binary, Path path);
@@ -23,12 +30,13 @@ public interface Fluent {
 
         CanIsolate annotatedClasses(String... options);
 
-        AddSource modules(String ... modules);
+        AddSource modules(String... modules);
     }
 
     interface CanIsolate extends AddSource {
 
         Compiled compile(String... options) throws Compiler.CompileException;
+
         CanCompile isolate();
     }
 
@@ -51,6 +59,10 @@ public interface Fluent {
     }
 
     interface Compiled {
+
+        Compiled byteCode(byte[] code) throws IOException;
+        Compiled byteCode(InputStream is) throws IOException;
+        Compiled byteCode(Path classpath) throws IOException;
 
         Stream<byte[]> stream();
 

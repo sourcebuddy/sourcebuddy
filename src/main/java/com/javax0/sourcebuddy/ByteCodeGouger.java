@@ -91,6 +91,12 @@ class ByteCodeGouger {
                         read1(is);
                         read2(is);
                     }
+                    case 19 -> { // module
+                        read2(is);
+                    }
+                    case 20 -> { // package
+                        read2(is);
+                    }
                     default ->
                             throw new RuntimeException("Invalid constant pool tag %d at position %d".formatted(t, i));
                 }

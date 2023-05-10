@@ -16,6 +16,9 @@ public class StringJavaSource extends SimpleJavaFileObject {
 
     final String binaryName;
 
+    Class<?> loadedClass;
+    Throwable exception;
+
     /**
      * To be loaded as a hidden class. By default, classes are loaded by the class loader the normal way.
      */

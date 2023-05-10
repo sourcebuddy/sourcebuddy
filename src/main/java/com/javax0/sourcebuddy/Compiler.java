@@ -4,6 +4,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
@@ -12,11 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,6 +46,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         NORMAL, // is the default.
         // Consult the parent class loader first to load classes.
         // The compiler's class loader is used only if the other class loaders could not load the class.
+        SLOPPY, // to allow sloppy loading.
+        // Loading the compiled classes may fail if a class cannot be loaded.
+        // This option will ignore the errors and will try to load the classes that can be loaded.
         // end snippet
     }
 
@@ -86,15 +87,43 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * #load(LoaderOption...) load()}.
      */
     public class Loaded {
-        Loaded() throws ClassNotFoundException {
+
+        /**
+         * Create a new loaded instance and load the classes.
+         * The class loading goes on if there are classes not loadable.
+         * It can happen when some class was added as compiled already using the method {@link #byteCode(byte[])}
+         * byteCode()} method.
+         * When the byte code of the class needs loading some class, which is not on the classpath, then the loading
+         * throws {@link NoClassDefFoundError} error.
+         * <p>
+         * The other classes keep loading, but the source object (a fake one in this case) will have a {@code null}
+         * for the class object and a non-{@code null} exception object.
+         */
+        Loaded() {
             if (state != CompilationState.SUCCESS) {
                 throw new RuntimeException("Loading a class is only possible after successful compilation.");
             }
             for (final var source : sources) {
                 if (!source.isModuleInfo()) {
-                    classLoader.loadClass(source.binaryName);
+                    try {
+                        source.loadedClass = classLoader.loadClass(source.binaryName);
+                        source.exception = null;
+                    } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                        source.loadedClass = null;
+                        source.exception = e;
+                    }
                 }
             }
+        }
+
+        /**
+         * When using thr {@link LoaderOption#SLOPPY} option the loading of the classes may fail.
+         * This method can be used to check that all classes were loaded.
+         *
+         * @return {@code true} if all classes were loaded, {@code false} otherwise.
+         */
+        public boolean fullyLoaded() {
+            return sources.stream().allMatch(source -> source.loadedClass != null);
         }
 
         public Fluent.AddSource reset() {
@@ -110,6 +139,11 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
          * @throws ClassNotFoundException if the class cannot be found.
          */
         public Class<?> get(final String name) throws ClassNotFoundException {
+            for (final var source : sources) {
+                if (source.binaryName.equals(name)) {
+                    return source.loadedClass;
+                }
+            }
             return classLoader.loadClass(getBinaryName(name));
         }
 
@@ -127,7 +161,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
             if (sources.size() > 1) {
                 throw new ClassNotFoundException("There were many classes compiled, you must specify the name which one you want to get.");
             }
-            return classLoader.loadClass(sources.get(0).binaryName);
+            return get(sources.get(0).binaryName);
         }
 
         /**
@@ -273,7 +307,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         }
 
         /**
-         * Get the compiled and loaded class as a stream.
+         * Get the compiled and loaded classes as a stream.
+         * <p>
+         * Note that it will also contain the classes, which do not have a separate source object being inner classes.
          *
          * @return the stream object.
          */
@@ -289,11 +325,23 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
                     });
         }
 
+        /**
+         * Get the names of all the sources which were not loaded.
+         * These may be fake sources, for which the binary was added calling {@link #byteCode(byte[]) byteCode()}.
+         *
+         * @return the stream, of binary names, which were not loaded
+         */
+        public Stream<String> streamFailed() {
+            return sources.stream()
+                    .filter(source -> source.loadedClass == null)
+                    .map(source -> source.binaryName);
+        }
+
     }
 
     private final List<StringJavaSource> sources = new ArrayList<>();
-    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    private final InMemoryJavaFileManager manager = new InMemoryJavaFileManager(compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8));
+    private final JavaCompiler compiler;
+    private final InMemoryJavaFileManager manager;
     private ClassLoader classLoader = null;
 
     private enum CompilationState {
@@ -380,8 +428,29 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         return (Class<T>) compile(sourceCode);
     }
 
+    /**
+     * Create a new compiler.
+     * Note that the existence of the compiler object returned here does not mean that there is an underlying compiler.
+     * If the platform is a JRE the underlying platform compiler object is {@code null}.
+     * TO ensure that compilation is possible, use the {@link #canCompile()} method.
+     *
+     * @return the compiler instance.
+     * @see ToolProvider#getSystemJavaCompiler()
+     */
     public static Fluent.AddSource java() {
         return new Compiler();
+    }
+
+    /**
+     * Checks that the compiler object can compile Java code.
+     * If the platform running the code is a JRE, the platform compiler will not be available.
+     * In this case, the compilation functions will nto be available and will throw exceptions.
+     *
+     * @return {@code true} if the compiler is available, {@code false} otherwise.
+     */
+    @Override
+    public boolean canCompile() {
+        return compiler != null;
     }
 
     @Override
@@ -394,6 +463,13 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * The constructor is not to be used. Use the {@link #java()} factory method.
      */
     private Compiler() {
+        compiler = ToolProvider.getSystemJavaCompiler();
+        manager = compiler == null ? new InMemoryJavaFileManager(null) : new InMemoryJavaFileManager(compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8));
+    }
+
+    Compiler(boolean ignored) {
+        compiler = null;
+        manager = new InMemoryJavaFileManager(null);
     }
 
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("(?:\\W|^|\\s)package\\s+(.*?);");
@@ -401,16 +477,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
 
 
     /**
-     * Add Java source to the compilation task. In this version you do not need to specify the name of the class.
-     * The implementation will try to figure it out in a very simple way.
+     * Add a Java source to the compilation task. In this version, you do not need to specify the name of the class.
+     * The implementation will try to figure it out in an elementary way.
      * The name of the package and the class is searched for using regular expressions.
      * <p>
      * The class should be in a package.
      * The class can not be an inner class.
-     * The word 'package' should not appear (presumably in a comment) before the package declaration and similarly
+     * The word 'package' should not appear (presumably in a comment) before the package declaration, and similarly
      * the work 'class' should not appear (again presumably in a comment) before the class declaration.
      * <p>
-     * In some special cases this may not work. In those cases the version with two arguments, specifying the class
+     * In some special cases, this may not work. In those cases, the version with two arguments, specifying the class
      * name in the first argument is to be used.
      *
      * @param sourceCode the source code to be compiled
@@ -443,12 +519,12 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * Add a Java source to the compilation task. You can call this method intermixed with the {@link #from(String, String)}
      * intermixed as many times as you like.
      * <p>
-     * When a directory is specified the directory should be the source root. The names of the classes will be
+     * When a directory is specified, the directory should be the source root. The names of the classes will be
      * calculated using the path of the individual files relative to the given directory. For example, in a Maven
      * project this directory is the {@code src/main/java} directory.
      * <p>
-     * When an individual file name is given the name of the class will be figured out from the source code. For the
-     * details of the algorithm and the limits see {@link #from(String)}. If you cannot meet the limitations you
+     * When an individual file name is given, the name of the class will be figured out from the source code. For the
+     * details of the algorithm and the limits see {@link #from(String)}. If you cannot meet the limitations, you
      * should use the method {@link #from(String, Path)}.
      *
      * @param fileOrDir the path to the source directory or to a source file.
@@ -676,8 +752,59 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
 
 
     /**
+     * Add byte code to the compiled set of codes.
+     * It may be useful if you want to add a class, which is compiled externally and not with this tool,
+     * but you still want to use this tool to load the byte code.
+     *
+     * @param code the byte code of the class
+     * @return the fluent object for the further call chaining
+     * @throws IOException if there is any issue writing the memory file objects, which should not really happen
+     */
+    public Fluent.Compiled byteCode(byte[] code) throws IOException {
+        if (state == CompilationState.FAILURE) {
+            throw new RuntimeException("The compilation was not successful, you cannot add byte code.");
+        }
+        state = CompilationState.SUCCESS;
+        final var name = ByteCodeGouger.getBinaryName(code);
+        final var mfo = new MemoryFileObject(name);
+        try (final var out = mfo.openOutputStream()) {
+            out.write(code);
+        }
+        manager.getClassFileObjectsMap().put(name, mfo);
+        // fake source to be able to load the class
+        sources.add(new StringJavaSource(name, ""));
+        return this;
+    }
+
+    public Fluent.Compiled byteCode(InputStream is) throws IOException {
+        return byteCode(is.readAllBytes());
+    }
+
+    public Fluent.Compiled byteCode(Path classPath) throws IOException {
+        if (new File(classPath.toUri()).isDirectory()) {
+            for (Path file : Files.walk(classPath).toList()) {
+                if (file.toString().endsWith(".class")) {
+                    byteCode(Files.readAllBytes(file));
+                }
+            }
+        } else if (classPath.toString().endsWith(".class")) {
+            byteCode(Files.readAllBytes(classPath));
+        } else if (classPath.toString().endsWith(".jar")) {
+            try (final var jar = new JarFile(classPath.toFile())) {
+                for (final var file : jar.stream().filter(jarEntry -> jarEntry.getName().endsWith(".class")).toList()) {
+                    byteCode(jar.getInputStream(file));
+                }
+            }
+        } else {
+            throw new RuntimeException("Cannot add byte code from " + classPath + " because it is not a class file, directory or a jar file.");
+        }
+        return this;
+    }
+
+
+    /**
      * Get the byte code as a stream of byte arrays. It will return the byte code of not only the classes added as
-     * source but also the classes, which are inner classes, anonymous classes created automatically by the compiler.
+     * a source but also the classes, which are inner classes, anonymous classes created automatically by the compiler.
      * <p>
      * You only get binary code arrays in a stream, you may need the name of the class that belongs to the individual
      * elements. To get the binary name of a class from the byte code represented as a byte array this class provides
@@ -724,7 +851,21 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
                 ((ByteClassLoader) classLoader).addByteCodes(classesByteArraysMap(), sources);
             }
         }
-        return new Loaded();
+        final var loaded = new Loaded();
+        if (!Set.of(options).contains(LoaderOption.SLOPPY)) {
+            for (final var source : sources) {
+                if (source.exception != null) {
+                    if (source.exception instanceof ClassNotFoundException) {
+                        throw (ClassNotFoundException) source.exception;
+                    }
+                    if (source.exception instanceof NoClassDefFoundError) {
+                        throw (NoClassDefFoundError) source.exception;
+                    }
+                    throw new RuntimeException(source.exception);
+                }
+            }
+        }
+        return loaded;
     }
 
     /**

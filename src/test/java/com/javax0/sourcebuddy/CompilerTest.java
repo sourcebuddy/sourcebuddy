@@ -3,6 +3,7 @@ package com.javax0.sourcebuddy;
 import com.javax0.sourcebuddytest.OuterClass;
 import com.javax0.sourcebuddytest.OuterClass2;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.javax0.sourcebuddy.Compiler.args;
 import static com.javax0.sourcebuddy.Compiler.classes;
@@ -277,6 +279,82 @@ public class CompilerTest {
     }
 
     @Test
+    @DisplayName("Compile one class and load using a different compiler instance")
+    void loadOnePrecompiled() throws Exception {
+        final var code = Compiler.java().from("package A;public class A{}").compile().get();
+        final Object o = Compiler.java().byteCode(code).load().newInstance();
+        Assertions.assertNotNull(o);
+    }
+
+    @Test
+    @DisplayName("When all classes are loaded then the check for fully loaded is true")
+    void testFullyLoadedSucceeds() throws Exception {
+        final var code = Compiler.java().from("package A;public class A{}").compile().get();
+        final var loaded = Compiler.java().byteCode(code).load(Compiler.LoaderOption.SLOPPY);
+        Assertions.assertTrue(loaded.fullyLoaded());
+    }
+
+    @Test
+    @DisplayName("When all classes are loaded then the check for fully loaded is true")
+    void testSloppyLoadingSucceeds() throws Exception {
+        final var code = Compiler.java()
+                .from("package A;public class A extends B{}")
+                .from("package A;public class B{}")
+                .compile().stream().filter(bc -> Compiler.getBinaryName(bc).equals("A.A")).findAny();
+        Assumptions.assumeTrue(code.isPresent());
+        final var loaded = Compiler.java().byteCode(code.get()).load(Compiler.LoaderOption.SLOPPY);
+        Assertions.assertFalse(loaded.fullyLoaded());
+        Assertions.assertEquals(Set.of("A.A"), loaded.streamFailed().collect(Collectors.toSet()));
+    }
+
+    @Test
+    @DisplayName("Load precompiled classes from a JAR file")
+    void loadPrecompiledFromJar() throws Exception {
+        final var jar = Paths.get(Objects.requireNonNull(
+                        this.getClass().getClassLoader().getResource("sample.jar"),
+                        "sample.jar is missing from test resources")
+                .getPath());
+        final var classesInSampleJAR = Compiler.java().byteCode(jar).load().stream().map(Class::getName).collect(Collectors.joining(","));
+        Assertions.assertEquals("com.javax0.sourcebuddy.DynExt", classesInSampleJAR);
+    }
+
+    @Test
+    @DisplayName("Load precompiled classes from a directory")
+    void loadPrecompiledFromDir() throws Exception {
+        final var jar = Paths.get(Objects.requireNonNull(
+                        this.getClass().getClassLoader().getResource("sample"),
+                        "directory sample is missing from test resources")
+                .getPath());
+
+        final var classesInSampleJAR = Compiler.java().byteCode(jar).load().stream().map(Class::getName).collect(Collectors.joining(","));
+        Assertions.assertEquals("com.javax0.sourcebuddy.DynExt", classesInSampleJAR);
+    }
+
+    @Test
+    @DisplayName("Load precompiled classes from a class file")
+    void loadPrecompiledFromFile() throws Exception {
+        final var klassFile = Paths.get(Objects.requireNonNull(
+                        this.getClass().getClassLoader().getResource("sample/com/javax0/sourcebuddy/DynExt.class"),
+                        "file sample/com/javax0/sourcebuddy/DynExt.class is missing from test resources")
+                .getPath());
+
+        final var classesInSampleJAR = Compiler.java().byteCode(klassFile).load().stream().map(Class::getName).collect(Collectors.joining(","));
+        Assertions.assertEquals("com.javax0.sourcebuddy.DynExt", classesInSampleJAR);
+    }
+
+    @Test
+    @DisplayName("Load precompiled classes from a class file when there is no compiler")
+    void loadPrecompiledFromFileNoCompiler() throws Exception {
+        final var klassFile = Paths.get(Objects.requireNonNull(
+                        this.getClass().getClassLoader().getResource("sample/com/javax0/sourcebuddy/DynExt.class"),
+                        "file sample/com/javax0/sourcebuddy/DynExt.class is missing from test resources")
+                .getPath());
+
+        final var classesInSampleJAR = new Compiler(true).byteCode(klassFile).load().stream().map(Class::getName).collect(Collectors.joining(","));
+        Assertions.assertEquals("com.javax0.sourcebuddy.DynExt", classesInSampleJAR);
+    }
+
+    @Test
     @DisplayName("Redefine class is not possible")
     void redefineAsHidden() throws Exception {
         final var compiler = Compiler.java();
@@ -412,7 +490,8 @@ public class CompilerTest {
     @Test
     @DisplayName("Inner class creation works new instance creation special for inner classes")
     void testInnerClassCreationNewInstance() throws Exception {
-        final var outer = new OuterClass2(){}; // anonymous children class, not the same class as the nesting host, but compatible
+        final var outer = new OuterClass2() {
+        }; // anonymous children class, not the same class as the nesting host, but compatible
         final var inner = Compiler.java().from("""
                         package com.javax0.sourcebuddytest;
                                                 
