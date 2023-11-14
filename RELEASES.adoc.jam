@@ -1,3 +1,4 @@
+{%@sep{} %}
 {@import samplemacros.jim}
 == pass:[{SB}] Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
