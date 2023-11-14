@@ -9,9 +9,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Fake file manager that does not do anything. It is used when the real file manager is not available.
- * In that case, the file manager is just storing byte code in the map, but it still needs a file manager
- * object to call the 'super' and pass this object to it.
+ * Fake file manager that does not do anything. It is used in {@link InMemoryJavaFileManager}.
  */
 public class FakeFileManager implements StandardJavaFileManager {
     @Override

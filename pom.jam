@@ -1,3 +1,4 @@
+{@comment writableOutput}
 {@import https://raw.githubusercontent.com/central7/pom/1/pom.jim}
 {@import versions.jim}
 {@define taglets($x)=<taglets>$x</taglets>}
@@ -69,6 +70,14 @@
             }
             {plugin|
                 {GAV :org.apache.maven.plugins:maven-surefire-plugin:{SUREFIRE_PLUGIN_VERSION}}
+            }
+            {plugin|
+                {GAV :com.javax0.jamal:jamal-maven-plugin:{JAMAL_VERSION}}
+                {executions|
+                    {execution|
+                        {goals|{goal|jamal}}
+                    }
+                }
             }
             {plugin|
                   {GAV :org.sonatype.plugins:nexus-staging-maven-plugin:{SONATYPE_PLUGIN_VERSION}}

@@ -18,11 +18,11 @@ $x
 --
 --------------------------------------------------------------------------------------------------------------------
 
-VERSION=2.4.0                             -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
+VERSION=2.4.3                             -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
 
 GROUPID=com.javax0.sourcebuddy            -- the project groupId.
 
-MODULE_PREFIX=sourcebuddy.                -- module names are sourcebuddy.XXXX
+MODULE_PREFIX=sourcebuddy.                -- module names are sou   rcebuddy.XXXX
 PACKAGE_PREFIX=javax0.sourcebuddy.        -- package names are less restrictive and it is not likely that anyone else would use javax0 as top level package
 
 JAVA_RELEASE=17
@@ -46,5 +46,5 @@ JUPITER_VERSION=5.9.0                      -- https://repo.maven.apache.org/mave
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-engine
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-params
 MOCKITO_VERSION=4.8.0                      -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core/
-JAMAL_VERSION=1.12.4                       -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
+JAMAL_VERSION=2.5.0-SNAPSHOT               -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
 }

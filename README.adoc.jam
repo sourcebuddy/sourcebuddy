@@ -269,7 +269,7 @@ This may look as simple as
 
 {%sample loadHidden_Lookup%}
 
-For a simpler interface you can also call the method without this argument, as
+For a simpler interface, you can also call the method without this argument, as
 
 {%sample loadHidden_noLookup%}
 

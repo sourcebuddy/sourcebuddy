@@ -6,7 +6,7 @@
 
 
 == Introduction
-.This documentation is about the version 2.4.0 of the software.
+.This documentation is about the version 2.4.3 of the software.
 
 SourceBuddy is a Java library you can use to compile and load dynamically generated Java source code in your program.
 
@@ -83,7 +83,7 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>2.4.0</version>
+    <version>2.4.3</version>
 </dependency>
 ----
 
@@ -289,7 +289,7 @@ You can call the static method `Compiler.getBinaryName()` to get the name.
 It is a utility method that gauges the name of the class from the binary representation.
 You can use this method for any byte code, not only those compiled with the compiler.
 
-NOTE: The `getBinaryName()` implementation supports JVM byte code up to 64, which is Java 20.
+NOTE: The `getBinaryName()` implementation supports JVM byte code up to 65, which is Java 20.
 Note that these version values are automatically pulled from the source code using Jamal.
 They are always up-to-date in this documentation.
 
@@ -360,7 +360,7 @@ This may look as simple as
 Compiler.java().from( "package com.sb.demo;class Z{}").hidden(MethodHandles.lookup()).compile().load();
 ----
 
-For a simpler interface you can also call the method without this argument, as
+For a simpler interface, you can also call the method without this argument, as
 
 [source,java]
 ----
