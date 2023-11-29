@@ -566,4 +566,19 @@ public class CompilerTest {
         }
     }
 
+    @Test
+    @DisplayName("The binary name can be extracted from a class file when it is simple")
+    void testGetBinaryNameFromSourceSimple() throws Exception {
+        Assertions.assertEquals("com.javax0.sourcebuddy.Test1",
+                Compiler.getBinaryNameFromSource(loadJavaSource("Test1.java")));
+        Compiler.getBinaryNameFromSource("package com.javax0.sourcebuddy; class Test1{}");
+    }
+
+    @Test
+    @DisplayName("The binary name can be extracted from a class file when there is a comment in front of the package")
+    void testGetBinaryNameFromSourceCommented() throws Exception {
+        Assertions.assertEquals("com.javax0.sourcebuddy.Test1",
+                Compiler.getBinaryNameFromSource(loadJavaSource("Test1.java")));
+        Compiler.getBinaryNameFromSource("// this is comment\npackage com.javax0.sourcebuddy; class Test1{}");
+    }
 }

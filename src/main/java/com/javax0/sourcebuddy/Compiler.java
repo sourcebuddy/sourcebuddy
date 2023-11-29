@@ -776,15 +776,38 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         return this;
     }
 
+    /**
+     * Read all bytes from the input stream and use it as byte code calling {@link #byteCode(byte[])}
+     *
+     * @param is the input stream to read the byte code from
+     * @return the fluent object for the further call chaining
+     * @throws IOException if there is any issue reading the input stream
+     */
     public Fluent.Compiled byteCode(InputStream is) throws IOException {
         return byteCode(is.readAllBytes());
     }
 
+    /**
+     * Load one or more classes from the given class path.
+     * <p>
+     * If the given class path is a directory or a JAR file then the method will load all the classes from the directory
+     * or the JAR file.
+     * <p>
+     * If the given class path is a single class file then the method will load that single class.
+     * <p>
+     *
+     * @param classPath the path to the class file, directory or JAR file
+     * @return the fluent object for the further call chaining
+     * @throws IOException if there is any issue reading the class file(s)
+     * @throws RuntimeException if the class path is not a class file, directory or JAR file
+     */
     public Fluent.Compiled byteCode(Path classPath) throws IOException {
         if (new File(classPath.toUri()).isDirectory()) {
-            for (Path file : Files.walk(classPath).toList()) {
-                if (file.toString().endsWith(".class")) {
-                    byteCode(Files.readAllBytes(file));
+            try (final var fileStream = Files.walk(classPath)) {
+                for (Path file : fileStream.toList()) {
+                    if (file.toString().endsWith(".class")) {
+                        byteCode(Files.readAllBytes(file));
+                    }
                 }
             }
         } else if (classPath.toString().endsWith(".class")) {
@@ -871,7 +894,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
     /**
      * Save the byte codes to {@code .class} files.
      *
-     * @param target the directory where the class files will be saved. The saving process will overwrite already
+     * @param target the directory where the class files will be saved. The saving process will overwrite the already
      *               existing class files that have the same name. The saving process automatically creates the
      *               needed directory structure.
      */
@@ -914,9 +937,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * <p>
      * If there is a '.' dot in the simple name, then this is already the binary name, we just return it.
      * <p>
-     * If there is only one class with the provided simple name it will be found.
+     * If there is only one class with the provided simple name, it will be found.
      * If there are more than one classes with the simple name, and one of them is in the default package (there is
-     * no package) then the simple name os the binary name.
+     * no package), then the simple name is the binary name.
      * If there are more than one classes with the simple name, and none of them is in the default package then a
      * {@link ClassNotFoundException} will throw.
      * <p>
@@ -968,6 +991,19 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         return binaryName;
     }
 
+    /**
+     * Get the binary name of the class from the source code.
+     *
+     * The method assumes that there is a 'package' and 'class' declaration in the file.
+     * The code uses pattern matching, therefore, it is not absolutely safe, but it should work for the practical cases.
+     * Among other things, keep your source simple and do not play tricks, like putting a comment between the keyword
+     * 'class' and the name of the class.
+     *
+     *
+     * @param sourceCode the Java source code that contains the class
+     * @return the binary name of the class
+     * @throws ClassNotFoundException if the name cannot be found
+     */
     public static String getBinaryNameFromSource(final String sourceCode) throws ClassNotFoundException {
         final var packageMatcher = PACKAGE_PATTERN.matcher(sourceCode);
         final var classMatcher = CLASS_PATTERN.matcher(sourceCode);

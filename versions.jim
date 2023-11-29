@@ -18,7 +18,7 @@ $x
 --
 --------------------------------------------------------------------------------------------------------------------
 
-VERSION=2.4.3                             -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
+VERSION=2.4.5                             -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
 
 GROUPID=com.javax0.sourcebuddy            -- the project groupId.
 
@@ -34,17 +34,17 @@ SONATYPE_PLUGIN_VERSION=1.6.13             -- https://repo.maven.apache.org/mave
 
 -- dependencies
 -- plugin dependencies
-MAVEN_COMPILER_PLUGIN_VERSION=3.9.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin
-MAVEN_JAVADOC_PLUGIN_VERSION=3.4.0         -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin
-MAVEN_GPG_PLUGIN_VERSION=3.0.1             -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-gpg-plugin/
-MAVEN_ASSEMBLY_PLUGIN_VERSION=3.3.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/
+MAVEN_COMPILER_PLUGIN_VERSION=3.11.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin
+MAVEN_JAVADOC_PLUGIN_VERSION=3.6.2         -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin
+MAVEN_GPG_PLUGIN_VERSION=3.1.0             -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-gpg-plugin/
+MAVEN_ASSEMBLY_PLUGIN_VERSION=3.6.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/
 SUREFIRE_PLUGIN_VERSION=3.0.0-M5           -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-surefire-plugin
-MAVEN_SOURCE_PLUGIN_VERSION=3.2.1          -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-source-plugin
+MAVEN_SOURCE_PLUGIN_VERSION=3.3.0          -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-source-plugin
 
 -- test dependency
 JUPITER_VERSION=5.9.0                      -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-api
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-engine
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-params
 MOCKITO_VERSION=4.8.0                      -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core/
-JAMAL_VERSION=2.5.0-SNAPSHOT               -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
+JAMAL_VERSION=2.5.0                        -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
 }

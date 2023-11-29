@@ -60,3 +60,4 @@ Fix to work with hidden classes properly and also adds extra APU.
 
 Initial release.
 Support hidden classes, but it does not work due to a bug.
+
