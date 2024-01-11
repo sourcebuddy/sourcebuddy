@@ -3,6 +3,12 @@
 == pass:[{SB}] Release history
 {@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
 
+
+
+=== {RELEASE 2.5.0} planned
+
+Support direct handling of the classpath.
+
 === {RELEASE 2.4.1}
 
 Support for JVM 21 formatted files.

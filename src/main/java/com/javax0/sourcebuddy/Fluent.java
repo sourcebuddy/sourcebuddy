@@ -13,7 +13,9 @@ public interface Fluent {
         boolean canCompile();
 
         Compiled byteCode(byte[] code) throws IOException;
+
         Compiled byteCode(InputStream is) throws IOException;
+
         Compiled byteCode(Path classpath) throws IOException;
 
         SpecifyNestHiddenNamed from(Path path) throws IOException, ClassNotFoundException;
@@ -27,6 +29,12 @@ public interface Fluent {
         AddSource reset();
 
         CanIsolate options(String... options);
+
+        CanIsolate classPath(final String cp);
+
+        CanIsolate inheritClassPath();
+
+        CanIsolate systemClassPath();
 
         CanIsolate annotatedClasses(String... options);
 
@@ -61,7 +69,9 @@ public interface Fluent {
     interface Compiled {
 
         Compiled byteCode(byte[] code) throws IOException;
+
         Compiled byteCode(InputStream is) throws IOException;
+
         Compiled byteCode(Path classpath) throws IOException;
 
         Stream<byte[]> stream();

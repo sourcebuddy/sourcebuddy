@@ -3,6 +3,12 @@
 == pass:[SourceBuddy] Release history
 
 
+
+
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.0[2.5.0] planned
+
+Support direct handling of the classpath.
+
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.4.1[2.4.1]
 
 Support for JVM 21 formatted files.

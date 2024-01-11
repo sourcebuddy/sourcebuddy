@@ -155,7 +155,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
          * @throws ClassNotFoundException if there was no class compiled or there were more than one classes compiled.
          */
         public Class<?> get() throws ClassNotFoundException {
-            if (sources.size() == 0) {
+            if (sources.isEmpty()) {
                 throw new ClassNotFoundException("There was no class compiled.");
             }
             if (sources.size() > 1) {
@@ -594,14 +594,26 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         }
     }
 
+    /**
+     * Signal that the class compiled is going to be a named class and not hidden.
+     * This is the default behavior, you do not need to call this method.
+     *
+     * @return the fluent object for the further call chaining
+     */
     @Override
     public Fluent.CanIsolate named() {
         return this;
     }
 
+    /**
+     * Signal that the class compiled is going to be a named class and not hidden.
+     *
+     * @param lookup is the lookup object to be used later loading the class
+     * @return the fluent object for the further call chaining
+     */
     @Override
     public Fluent.CanIsolate named(MethodHandles.Lookup lookup) {
-        if (sources.size() == 0) {
+        if (sources.isEmpty()) {
             throw new RuntimeException("There is no source added, this is an internal error.");
         }
         final var lastSource = sources.get(sources.size() - 1);
@@ -610,9 +622,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         return this;
     }
 
+    /**
+     * Signal that the last added source is a hidden class.
+     *
+     * @param lookup       is the lookup object to be used later loading the class
+     * @param classOptions the class options when loading the class.
+     * @return the fluent object for the further call chaining
+     */
     @Override
     public Fluent.CanIsolate hidden(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
-        if (sources.size() == 0) {
+        if (sources.isEmpty()) {
             throw new RuntimeException("There is no source added, this is an internal error.");
         }
         final var lastSource = sources.get(sources.size() - 1);
@@ -640,7 +659,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      */
     @Override
     public Fluent.CanIsolate nest(MethodHandles.Lookup lookup, MethodHandles.Lookup.ClassOption... classOptions) {
-        if (sources.size() == 0) {
+        if (sources.isEmpty()) {
             throw new RuntimeException("There is no source added, this is an internal error.");
         }
         final var lastSource = sources.get(sources.size() - 1);
@@ -678,9 +697,45 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
     }
 
     /**
+     * Add the option {@code -cp} with the value {@code System.getProperty("java.class.path")} to the compiler.
+     *
+     * @return the fluent object for the further call chaining
+     */
+    @Override
+    public Fluent.CanIsolate systemClassPath() {
+        return classPath(System.getProperty("java.class.path"));
+    }
+
+    /**
+     * Add the option {@code -cp} with the value containing all the elements from the class path including recursively
+     * the {@code Class-Path} entries from the MANIFEST files of the JAR files.
+     * <p>
+     * Note that usually you do not need to call this method. It should be enough to add the system class path calling
+     * {@link #systemClassPath()}. The compiler will find the classes following the {@code Class-Path} entries if
+     * needed. Call this method if, for some reason, {@link #systemClassPath()} does not work.
+     *
+     * @return the fluent object for the further call chaining
+     */
+    @Override
+    public Fluent.CanIsolate inheritClassPath() {
+        return classPath(String.join(File.pathSeparator, ClasspathCollector.getEntries()));
+    }
+
+    /**
+     * Add the option {@code -cp} with the value {@code cp} to the compiler.
+     *
+     * @param cp the class path to be added. Note that the value should use the platform specific path separator.
+     * @return the fluent object for the further call chaining
+     */
+    @Override
+    public Fluent.CanIsolate classPath(final String cp) {
+        return options("-cp", cp);
+    }
+
+    /**
      * Add options to the compiler.
      *
-     * @param options
+     * @param options are the command line options in the order they would appear on the command line
      * @return this
      */
     @Override
@@ -798,7 +853,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      *
      * @param classPath the path to the class file, directory or JAR file
      * @return the fluent object for the further call chaining
-     * @throws IOException if there is any issue reading the class file(s)
+     * @throws IOException      if there is any issue reading the class file(s)
      * @throws RuntimeException if the class path is not a class file, directory or JAR file
      */
     public Fluent.Compiled byteCode(Path classPath) throws IOException {
@@ -848,7 +903,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      */
     public byte[] get() throws ClassNotFoundException {
         final var map = classesByteArraysMap();
-        if (map.size() == 0) {
+        if (map.isEmpty()) {
             throw new ClassNotFoundException("There was no class compiled.");
         }
         if (map.size() > 1) {
@@ -993,12 +1048,11 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
 
     /**
      * Get the binary name of the class from the source code.
-     *
+     * <p>
      * The method assumes that there is a 'package' and 'class' declaration in the file.
      * The code uses pattern matching, therefore, it is not absolutely safe, but it should work for the practical cases.
      * Among other things, keep your source simple and do not play tricks, like putting a comment between the keyword
      * 'class' and the name of the class.
-     *
      *
      * @param sourceCode the Java source code that contains the class
      * @return the binary name of the class
