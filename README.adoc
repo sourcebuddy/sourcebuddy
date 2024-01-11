@@ -201,7 +201,7 @@ You can omit the class name.
 This information is already in the source code after all.
 The class name is required by the JDK compiler.
 SourceBuddy has to provide it.
-To do that it either gets it as an argument or tries to figure out even before compiling the code.
+To do that, it either gets it as an argument or tries to figure out even before compiling the code.
 Use the one without the name, and specify the name only in special cases when SourceBuddy cannot identify it.
 
 To add multiple sources, you can call this method multiple times.
@@ -296,7 +296,7 @@ They are always up-to-date in this documentation.
 === 7.  Load the classes
 
 Applications usually want to load the classes after compilation.
-The aptly named method `load()` can be used to do that.
+The aptly named method `load()` does that.
 
 [source,java]
 ----
@@ -307,7 +307,7 @@ The aptly named method `load()` can be used to do that.
 It will load the classes from the memory-stored byte code to the JVM.
 This loading will convert the byte codes to `Class` objects.
 
-The method `load()` get `Compiler.LoaderOption` arguments.
+The method `load()` can get `Compiler.LoaderOption` arguments.
 The possible values are
 
 * `REVERSE`  will load the compiled classes first even if a class with the same name is already loaded.
@@ -406,7 +406,7 @@ To get a class object by its name, you can call
 
 ----
 
-The class also contains a complimentary method called `newInstance(String className, Class type)`.
+There is also a complimentary method called `newInstance(String className)`.
 When you call
 
 [source,java]
@@ -418,11 +418,21 @@ When you call
 you will get a new instance of the class.
 You can use the simple name of the class assuming that the name is unique in your compilation.
 If you have two or more classes with the same name in different packages you have to use the full name.
-If you only have one single class in your compilation you can omit the name and call `get()` or `newInstance()` without a name.
+If you only have one single class in your compilation, you can omit the name and call `get()` or `newInstance()` without a name.
 
 You can also call the method `newInstance()` specifying the class of the instance in the case the compiled class implements an interface or extends a class.
-The `newInstance()` method also has a version that accepts a `Class` and an `Object` array argument to call a constructor that needs parameters.
-This is unavoidable when you crate a new inner class and make it to be a nest mate of an already existing object.
+This form returns the instance cast to the type you specified.
+The `newInstance()` method also has a version that accepts a `Class` array and an `Object` array argument to call a constructor that needs parameters.
+This is the general version of the method to create an instance.
+When creating an inner class to an already existing class, this is the only way to create an instance.
+A non-static inner class constructor always needs an instance of the outer class as argument.
+
+NOTE: The Java source code does not use this argument.
+This argument is automatically added to the constructor by the Java compiler.
+The non-static inner class can access the members of the outer class, and this is how it is done.
+The Java compiler adds the outer class instance as the first argument to the constructor of the inner class.
+The constructor stores the value in a generated field in the inner class, and the generated code uses this field to access the outer class instance.
+When the class you want to load is the inner class of an inner class, the situation gets even more complex.
 
 === 9.  Stream through the class objects
 
@@ -669,4 +679,3 @@ I will react and help you as much as I can afford.
 You are welcome to open tickets in GitHub if you have any question, but also for suggestions and only if you like the tool.
 Usually I struggle with lacking the information about how many are using my tools.
 Do not leave me in the dark.
-

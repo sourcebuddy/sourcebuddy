@@ -241,6 +241,20 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
             return constructor.newInstance(outer);
         }
 
+        /**
+         * Create a new instance of a class.
+         *
+         * @param name  the name of the class to create.
+         * @param types the argument types of the constructor
+         * @param args  the arguments of the constructor
+         * @return the new instance of the class
+         * @throws ClassNotFoundException    when exception happens
+         * @throws NoSuchMethodException     when exception happens
+         * @throws InvocationTargetException when exception happens
+         * @throws InstantiationException    when exception happens
+         * @throws IllegalAccessException    when exception happens
+         * @throws ClassCastException        when exception happens
+         */
         public Object newInstance(final String name, Class<?>[] types, Object[] args)
                 throws ClassNotFoundException,
                 NoSuchMethodException,
@@ -253,6 +267,22 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
             return constructor.newInstance(args);
         }
 
+        /**
+         * Create a new instance of a class.
+         *
+         * @param name    the name of the class to create.
+         * @param ignored is used to casting, usually an interface implemented, or a class extended by the dynamically
+         *                created class
+         * @param types   the argument types of the constructor
+         * @param args    the arguments of the constructor
+         * @return the new instance of the class
+         * @throws ClassNotFoundException    when exception happens
+         * @throws NoSuchMethodException     when exception happens
+         * @throws InvocationTargetException when exception happens
+         * @throws InstantiationException    when exception happens
+         * @throws IllegalAccessException    when exception happens
+         * @throws ClassCastException        when exception happens
+         */
         public <T> T newInstance(final String name, Class<T> ignored, Class<?>[] types, Object[] args)
                 throws ClassNotFoundException,
                 NoSuchMethodException,
@@ -268,7 +298,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
 
         /**
          * This method is the same as {@link #newInstance(String, Class)} except it does not need a name.
-         * It can be used if there is only one single class compiled. If there is only one class compiled you do not
+         * It can be used if there is only one single class compiled. If there is only one class compiled, you do not
          * need to specify the name.
          *
          * @param ignored used to casting, usually an interface implemented, or a class extended by the dynamically created class
@@ -294,6 +324,18 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
             return (T) constructor.newInstance();
         }
 
+        /**
+         * Create a new instance of the only class that was compiled.
+         * It is an error to call this method if there were more than a single class compiled.
+         *
+         * @return the new instance of the class
+         * @throws ClassNotFoundException    if there is no such class
+         * @throws NoSuchMethodException     if the class does not have no-argument constructor
+         * @throws InvocationTargetException if the constructor throws an exception
+         * @throws InstantiationException    if the object cannot be instantiated
+         * @throws IllegalAccessException    if the constructor is not accessible (for example, private)
+         * @throws ClassCastException        if the class is of a different type and cannot be cast to {@code T}
+         */
         public Object newInstance()
                 throws ClassNotFoundException,
                 NoSuchMethodException,
@@ -453,6 +495,13 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         return compiler != null;
     }
 
+    /**
+     * Reset the compiler so that a new compilation phase can start.
+     * This is only needed if the new compilation phase needs the classes compiler earlier.
+     * If that is not the case, it is recommended to create a new compiler object instead of resetting an existing one.
+     *
+     * @return the fluent object for further call chaining
+     */
     @Override
     public Fluent.AddSource reset() {
         state = CompilationState.ADD_SOURCE;
@@ -467,6 +516,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         manager = compiler == null ? new InMemoryJavaFileManager(null) : new InMemoryJavaFileManager(compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8));
     }
 
+    /**
+     * An internal test only constructor, to test the case when there is no compiler in the run-time.
+     * To have the Java compiler, the JDK must be used, not the JRE.
+     * On the other hand, some functions, like loading byte code or loading classes from JAR files, are still usable
+     * from the library in this case.
+     * RThis constructor helps to test those cases.
+     *
+     * @param ignored ignored and used only to have an argument that distinguish this constructor from the
+     *                argument-less one.
+     */
     Compiler(boolean ignored) {
         compiler = null;
         manager = new InMemoryJavaFileManager(null);
@@ -481,13 +540,16 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * The implementation will try to figure it out in an elementary way.
      * The name of the package and the class is searched for using regular expressions.
      * <p>
-     * The class should be in a package.
-     * The class can not be an inner class.
-     * The word 'package' should not appear (presumably in a comment) before the package declaration, and similarly
+     *     <ul>
+     * <li>The class should be in a package.
+     * <li>The class cannot be an inner class.
+     * <li>The word 'package' should not appear (presumably in a comment) before the package declaration, and similarly
      * the work 'class' should not appear (again presumably in a comment) before the class declaration.
+     *     </ul>
      * <p>
-     * In some special cases, this may not work. In those cases, the version with two arguments, specifying the class
-     * name in the first argument is to be used.
+     * In some special cases, this may not work.
+     * In those cases, the version with two arguments {@link #from(String, String) from(binaryName, source)},
+     * specifying the class name in the first argument is to be used.
      *
      * @param sourceCode the source code to be compiled
      * @return the fluent object for further calling
@@ -502,7 +564,9 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * Add a Java source to the compilation task. You can call this method intermixed with the {@link #from(Path)}
      * intermixed as many times as you like.
      *
-     * @param binaryName the binary name of the class, e.g.: {@code com.javax0.sourcebuddy.Test2$Hallo}
+     * @param binaryName the binary name of the class, e.g.: {@code com.javax0.sourcebuddy.Test2$Hallo}.
+     *                   This is the name of the class including the package and also the nesting class names with $
+     *                   sign separating the outer and inner class names, as 'binaryName' is defined in the JLS.
      * @param sourceCode the Java source code as a string.
      * @return the fluent object for the further call chaining
      */
@@ -516,7 +580,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
     }
 
     /**
-     * Add a Java source to the compilation task. You can call this method intermixed with the {@link #from(String, String)}
+     * Add a Java source to the compilation task. You can call this method intermixed with the {@link #from(String, String) from(binaryName, source)}
      * intermixed as many times as you like.
      * <p>
      * When a directory is specified, the directory should be the source root. The names of the classes will be
@@ -525,7 +589,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
      * <p>
      * When an individual file name is given, the name of the class will be figured out from the source code. For the
      * details of the algorithm and the limits see {@link #from(String)}. If you cannot meet the limitations, you
-     * should use the method {@link #from(String, Path)}.
+     * should use the method {@link #from(String, Path) from(binaryName,Path)}.
      *
      * @param fileOrDir the path to the source directory or to a source file.
      * @return the fluent object for the further call chaining
