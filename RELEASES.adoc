@@ -5,9 +5,11 @@
 
 
 
-=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.0[2.5.0] planned
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.0[2.5.0]
 
-Support direct handling of the classpath.
+* Support direct handling of the classpath.
+* Support for JVM 22 formatted files.
+  There was no change in the format, only the latest supported class format version was upped to 66 in the ByteCodeGouger
 
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.4.1[2.4.1]
 
@@ -66,4 +68,3 @@ Fix to work with hidden classes properly and also adds extra APU.
 
 Initial release.
 Support hidden classes, but it does not work due to a bug.
-

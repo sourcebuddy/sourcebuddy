@@ -6,7 +6,7 @@ import java.io.IOException;
 
 class ByteCodeGouger {
     // snipline JVM_VERSION
-    private final static int JVM_VERSION = 65;
+    private final static int JVM_VERSION = 66;
     // snipline JAVA_VERSION
     private final static int JAVA_VERSION = 20;
 

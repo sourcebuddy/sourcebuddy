@@ -5,9 +5,11 @@
 
 
 
-=== {RELEASE 2.5.0} planned
+=== {RELEASE 2.5.0}
 
-Support direct handling of the classpath.
+* Support direct handling of the classpath.
+* Support for JVM 22 formatted files.
+  There was no change in the format, only the latest supported class format version was upped to 66 in the ByteCodeGouger
 
 === {RELEASE 2.4.1}
 
