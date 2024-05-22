@@ -5,4 +5,4 @@ It is used to test that the library works well, slurping up source files from a 
 `file_collect_test` is used to test directory traversal.
 
 directory `sample` contains already compiled files to test that `byteCode()` can load from a directory structure.
-The file `sample.jar` contains already compiled files to test that `byteCode()` can load from a Jar structure.
+The file `sample.jar` contains already compiled files to test that `byteCode()` can load

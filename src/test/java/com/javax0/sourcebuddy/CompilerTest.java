@@ -52,6 +52,46 @@ public class CompilerTest {
     }
 
     @Test
+    @DisplayName("source code compiles without specifying class name")
+    public void goodSimpleCodeWoClassname() throws Exception {
+        final String source = loadJavaSource("Test1.java");
+        Class<?> newClass = Compiler.compile(source);
+        Object object = newClass.getConstructor().newInstance();
+        Method f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("x", s);
+    }
+
+    @Test
+    @DisplayName("source code compiles without specifying class name for interface")
+    public void goodSimpleInterfaceWoClassname() throws Exception {
+        final String source = loadJavaSource("Test1interface.java");
+        Class<?> newClass = Compiler.compile(source);
+        Method f = newClass.getMethod("a");
+        Assertions.assertEquals("a", f.getName());
+    }
+
+    @Test
+    @DisplayName("source code compiles without specifying class name for enum")
+    public void goodSimpleEnumWoClassname() throws Exception {
+        final String source = loadJavaSource("Test1enum.java");
+        Class<?> newClass = Compiler.compile(source);
+        var f = newClass.getField("ONE");
+        Assertions.assertEquals("ONE", f.getName());
+    }
+
+    @Test
+    @DisplayName("source code compiles without specifying class name for record")
+    public void goodSimpleRecordWoClassname() throws Exception {
+        final String source = loadJavaSource("Test1record.java");
+        Class<?> newClass = Compiler.compile(source);
+        Object object = newClass.getConstructor(String.class, Integer.class, long.class).newInstance("sisa", 42, 100L);
+        var f = newClass.getMethod("a");
+        String s = (String) f.invoke(object);
+        Assertions.assertEquals("sisa", s);
+    }
+
+    @Test
     @DisplayName("source code compiles providing the path to the file")
     public void goodSimpleCodeWithPathToFile() throws Exception {
         Class<?> newClass = Compiler.java().from(getTest1ResourcePath()).compile().load().get();
@@ -142,7 +182,7 @@ public class CompilerTest {
 
     @Test
     @DisplayName("get w/o args will throw when there are multiple compiled classes")
-    public void usingFluentApiGetNoArgThows() throws Exception {
+    public void usingFluentApiGetNoArgThrows() throws Exception {
         final String source1 = loadJavaSource("Test1.java");
         final String source2 = loadJavaSource("Test2.java");
         Assertions.assertThrows(ClassNotFoundException.class, () ->
@@ -366,7 +406,7 @@ public class CompilerTest {
 
     final static private String PACKAGE_PROTECTED_CLASS = """
             package com.javax0.sourcebuddy;
-             
+                        
             class PackageClass {
               void hi(){
                 System.out.println("hi");
@@ -397,19 +437,15 @@ public class CompilerTest {
         final var loaded1 = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named().compile().load();
         final var hi1 = loaded1.newInstance();
         final var m1 = hi1.getClass().getDeclaredMethod("hi");
-        // although they are in the same package, but they are loaded by different class loaders, and
+        // although they are in the same package, they are loaded by different class loaders, and
         // therefore they are in different modules, cannot call package protected methods
         m1.invoke(hi1);
         final var loaded2 = Compiler.java().from(PACKAGE_PROTECTED_CLASS).named().compile().load(Compiler.LoaderOption.REVERSE);
         final var hi2 = loaded2.newInstance();
         final var m2 = hi2.getClass().getDeclaredMethod("hi");
-        // although they are in the same package, but they are loaded by different class loaders, and
+        // although they are in the same package, they are loaded by different class loaders, and
         // therefore they are in different modules, cannot call package protected methods
         Assertions.assertThrows(IllegalAccessException.class, () -> m2.invoke(hi2));
-    }
-
-    private static void printClass(final Class<?> c) {
-        System.out.printf("%s - %s/%s#%s%n", c.getClassLoader(), c.getModule(), c.getPackageName(), c.getSimpleName());
     }
 
     @Test
@@ -423,13 +459,13 @@ public class CompilerTest {
                                                 
                         public class OuterClass {
                             private int z=33;
-                                        
+                                                
                             public class Inner {
                                public void a(){
                                  z++;
                                }
                             }
-                                        
+                                                
                         }""").nest(lookup, MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", classes(OuterClass.class), args(outer));
         final var m = inner.getClass().getDeclaredMethod("a");
@@ -455,7 +491,7 @@ public class CompilerTest {
                                  inc();
                                }
                             }
-                                        
+                                                
                         }""").nest(lookup, MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", classes(OuterClass.class), args(outer));
         final var m = inner.getClass().getDeclaredMethod("a");
@@ -473,13 +509,13 @@ public class CompilerTest {
                                                 
                         public class OuterClass2 {
                             private int z;
-                                        
+                                                
                             public class Inner {
                                public void a(){
                                  z++;
                                }
                             }
-                                        
+                                                
                         }""").nest(MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", classes(OuterClass2.class), args(outer));
         final var m = inner.getClass().getDeclaredMethod("a");
@@ -491,19 +527,19 @@ public class CompilerTest {
     @DisplayName("Inner class creation works new instance creation special for inner classes")
     void testInnerClassCreationNewInstance() throws Exception {
         final var outer = new OuterClass2() {
-        }; // anonymous children class, not the same class as the nesting host, but compatible
+        }; // anonymous children class, different class as the nesting host, but compatible
         final var inner = Compiler.java().from("""
                         package com.javax0.sourcebuddytest;
                                                 
                         public class OuterClass2 {
                             private int z;
-                                        
+                                                
                             public class Inner {
                                public void a(){
                                  z++;
                                }
                             }
-                                        
+                                                
                         }""").nest(MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", outer);
         final var m = inner.getClass().getDeclaredMethod("a");
@@ -520,13 +556,13 @@ public class CompilerTest {
                                                 
                         public class OuterClass {
                             private int z;
-                                        
+                                                
                             public class Inner {
                                public void a(){
                                  z++;
                                }
                             }
-                                        
+                                                
                         }""").nest(MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", classes(OuterClass.class), args(outer));
         final var m = inner.getClass().getDeclaredMethod("a");
@@ -548,13 +584,13 @@ public class CompilerTest {
                                                 
                         public class OuterClass {
                             private long z; // the type of the field does not match the one in the code
-                                        
+                                                
                             public class Inner {
                                public void a(){
                                  z++;
                                }
                             }
-                                        
+                                                
                         }""").nest(lookup, MethodHandles.Lookup.ClassOption.NESTMATE).compile().load()
                 .newInstance("Inner", classes(OuterClass.class), args(outer));
         final var m = inner.getClass().getDeclaredMethod("a");

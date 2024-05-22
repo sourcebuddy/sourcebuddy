@@ -532,7 +532,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
     }
 
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("(?:\\W|^|\\s)package\\s+(.*?);");
-    private static final Pattern CLASS_PATTERN = Pattern.compile("(?:\\W|\\s)class\\s+([\\w.]+)(?:\\W|\\s)");
+    private static final Pattern CLASS_PATTERN = Pattern.compile("(?:\\W|\\s)(?:class|record|interface|enum)\\s+([\\w.]+)(?:\\W|\\s)");
 
 
     /**

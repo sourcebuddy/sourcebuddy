@@ -5,11 +5,19 @@
 
 
 
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.1[2.5.1]
+
+* Bug fix to recognize the name of the class from the source code in the case of
+
+** `interface`,
+** `enum`, and
+** `record` classes.
+
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.0[2.5.0]
 
 * Support direct handling of the classpath.
 * Support for JVM 22 formatted files.
-  There was no change in the format, only the latest supported class format version was upped to 66 in the ByteCodeGouger
+  There was no change in the format, only _the_ latest supported class format version was upped to 66 in the ByteCodeGouger
 
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.4.1[2.4.1]
 
@@ -68,3 +76,4 @@ Fix to work with hidden classes properly and also adds extra APU.
 
 Initial release.
 Support hidden classes, but it does not work due to a bug.
+
