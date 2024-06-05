@@ -17,7 +17,7 @@ An example code is the following:
 {%sample simple_compile%}
 
 {%SB%} is a simple Java source compiler facade in front of the JDK-provided `javac` compiler.
-You need follow the steps as depicted here:
+You need to follow the steps as depicted here:
 
 image::images/compile_flow.svg[]
 
@@ -67,6 +67,9 @@ The Maven central coordinates are:
 ----
 
 SourceBuddy requires Java {%pom //project/build/plugins/plugin/configuration/release%}.
+
+The library is modularized starting with the release `2.5.2`.
+It means that you have to add a `requires` statement to your `module-info.java` file.
 
 Documentation on the different link:RELEASES.adoc[releases].
 

@@ -5,6 +5,13 @@
 
 
 
+=== link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.2[2.5.2]
+
+The library now supports the Java module system.
+The library itself is a module `com.javax0.sourcebuddy`.
+
+In addition to this the library added several methods to the fluent API to set different common Java compiler options.
+
 === link:https://github.com/sourcebuddy/sourcebuddy/tree/2.5.1[2.5.1]
 
 * Bug fix to recognize the name of the class from the source code in the case of
@@ -76,4 +83,3 @@ Fix to work with hidden classes properly and also adds extra APU.
 
 Initial release.
 Support hidden classes, but it does not work due to a bug.
-

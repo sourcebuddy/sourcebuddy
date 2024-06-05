@@ -1,0 +1,33 @@
+{@import versions.jim}\
+= Jamal dependencies versions check
+
+This file can be used to check the Jamal dependency versions.
+It loads the versions from the `{@file versions.jim}` file and has a macro comparing it against the current Maven repo.
+The rendering of this file is slow because it has to download the Maven metadata files from the Maven repository.
+If all dependencies are up-to-date, then the output should not contain any `*[red]#NO#*` text with upgrade instructions.
+
+{@define CHECK($X,$Y)=
+* {@snip:xml V=https://repo.maven.apache.org/maven2/$Y/maven-metadata.xml}\
+{#define RELEASE={V //metadata/versioning/release}}\
+{#define TEST="{$X}" == "{RELEASE}"}\
+{#do
+if {TEST} then
+<< "`OK` "
+else
+<< "`*[red]#NO#*` "
+endif} `$X` `{$X}` {#do
+if not {TEST} then
+<< "`*[red]#upgrade to {RELEASE}#*`"
+endif}}
+
+{CHECK :SONATYPE_PLUGIN_VERSION:org/sonatype/plugins/nexus-staging-maven-plugin}
+{CHECK :MAVEN_COMPILER_PLUGIN_VERSION:org/apache/maven/plugins/maven-compiler-plugin}
+{CHECK :MAVEN_JAVADOC_PLUGIN_VERSION:org/apache/maven/plugins/maven-javadoc-plugin}
+{CHECK :MAVEN_GPG_PLUGIN_VERSION:org/apache/maven/plugins/maven-gpg-plugin}
+{CHECK :MAVEN_ASSEMBLY_PLUGIN_VERSION:org/apache/maven/plugins/maven-assembly-plugin}
+{CHECK :SUREFIRE_PLUGIN_VERSION:org/apache/maven/plugins/maven-surefire-plugin}
+{CHECK :MAVEN_SOURCE_PLUGIN_VERSION:org/apache/maven/plugins/maven-source-plugin}
+{CHECK :JUPITER_VERSION:org/junit/jupiter/junit-jupiter-api}
+{CHECK :MOCKITO_VERSION:org/mockito/mockito-core}
+{CHECK :JAMAL_VERSION:com/javax0/jamal/jamal-all}
+
