@@ -602,7 +602,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
                         fileStream
                                 .filter(file -> file.toString().endsWith(".java"))
                                 .map((Path file) -> new StringJavaSource(fileOrDir.relativize(file).toString()
-                                        .replaceAll("/", ".")
+                                        .replaceAll("[/\\\\]", ".")
                                         .replaceAll("\\.java$", "")
                                         , getFileContent(file))).toList());
             } catch (RuntimeException re) {

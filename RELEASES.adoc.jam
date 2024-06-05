@@ -5,6 +5,11 @@
 
 
 
+=== {RELEASE 2.5.3}
+
+Bug fix when specifying files on Windows, the file separator was not handled correctly.
+This release allows you to use `/` and `\` interchangeably in the file names on any operating system.
+
 === {RELEASE 2.5.2}
 
 The library now supports the Java module system.
