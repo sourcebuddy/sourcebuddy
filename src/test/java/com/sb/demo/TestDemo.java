@@ -9,6 +9,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
 
+import static com.javax0.sourcebuddy.DebugInfo.NONE;
+
 // snippet class_Demo_head
 public class TestDemo {
     public final Double PI = 3.1415926;
@@ -151,8 +153,9 @@ public class TestDemo {
                   }
                 }""";
         final var compiled = Compiler.java()
+                .options("-g:none")
                 .from("com.sb.demo.FirstClass", sourceFirstClass)
-                .from(Paths.get("src/test/java"))
+                .from(Paths.get("src/test/resources/src"))
                 .compile();
         compiled.saveTo(Paths.get("./target/generated_classes"));
         compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));

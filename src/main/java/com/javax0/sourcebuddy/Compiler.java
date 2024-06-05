@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -806,6 +807,76 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
     public Fluent.CanIsolate options(String... options) {
         compilerOptions.addAll(List.of(options));
         return this;
+    }
+
+    @Override
+    public Fluent.CanIsolate release(int version) {
+        return options("-release", "" + version);
+    }
+
+    @Override
+    public Fluent.CanIsolate source(int version) {
+        return options("-source", "" + version);
+    }
+
+    @Override
+    public Fluent.CanIsolate target(int version) {
+        return options("-target", "" + version);
+    }
+
+    @Override
+    public Fluent.CanIsolate encoding(Charset charset) {
+        return options("-encoding", charset.name());
+    }
+
+    @Override
+    public Fluent.CanIsolate verbose() {
+        return options("-verbose");
+    }
+
+    @Override
+    public Fluent.CanIsolate debugInfo(DebugInfo debugInfo) {
+        if (debugInfo == null || debugInfo == DebugInfo.ALL) {
+            return options("-g");
+        }
+        return options("-g:" + (debugInfo.toString().toLowerCase()));
+    }
+    public Fluent.CanIsolate noDebugInfo(){
+        return debugInfo(DebugInfo.NONE);
+    }
+    @Override
+    public Fluent.CanIsolate nowarn() {
+        return options("-nowarn");
+    }
+
+    @Override
+    public Fluent.CanIsolate showDeprecation() {
+        return options("-deprecation");
+    }
+
+    @Override
+    public Fluent.CanIsolate parameters() {
+        return options("-parameters");
+    }
+
+    @Override
+    public Fluent.CanIsolate addExports(Export... exports) {
+        return options("-add-exports", Arrays.stream(exports).map(Export::toString).collect(Collectors.joining(",")));
+    }
+
+    @Override
+    public Fluent.CanIsolate addModules(String... modules) {
+        return options("-add-modules", String.join(",", modules));
+    }
+
+    @Override
+    public Fluent.CanIsolate limitModules(String... modules) {
+        return options("-limit-modules", String.join(",", modules));
+    }
+
+    @Override
+    public Fluent.CanIsolate module(String module) {
+        return options("-module", module);
     }
 
     /**

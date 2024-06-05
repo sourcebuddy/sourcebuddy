@@ -18,7 +18,7 @@ $x
 --
 --------------------------------------------------------------------------------------------------------------------
 
-VERSION=2.5.1                             -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
+VERSION=2.5.2-SNAPSHOT                    -- https://repo.maven.apache.org/maven2/com/javax0/sourcebuddy/SourceBuddy/
 
 GROUPID=com.javax0.sourcebuddy            -- the project groupId.
 
@@ -30,21 +30,21 @@ JAVA_SOURCE=17
 JAVA_TARGET=17
 
 
-SONATYPE_PLUGIN_VERSION=1.6.13             -- https://repo.maven.apache.org/maven2/org/sonatype/plugins/nexus-staging-maven-plugin
+SONATYPE_PLUGIN_VERSION=1.7.0              -- https://repo.maven.apache.org/maven2/org/sonatype/plugins/nexus-staging-maven-plugin
 
 -- dependencies
 -- plugin dependencies
-MAVEN_COMPILER_PLUGIN_VERSION=3.11.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin
-MAVEN_JAVADOC_PLUGIN_VERSION=3.6.2         -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin
-MAVEN_GPG_PLUGIN_VERSION=3.1.0             -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-gpg-plugin/
-MAVEN_ASSEMBLY_PLUGIN_VERSION=3.6.0        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin/
-SUREFIRE_PLUGIN_VERSION=3.0.0-M5           -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-surefire-plugin
-MAVEN_SOURCE_PLUGIN_VERSION=3.3.0          -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-source-plugin
+MAVEN_COMPILER_PLUGIN_VERSION=3.13.0       -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin
+MAVEN_JAVADOC_PLUGIN_VERSION=3.7.0         -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-javadoc-plugin
+MAVEN_GPG_PLUGIN_VERSION=3.2.4             -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-gpg-plugin
+MAVEN_ASSEMBLY_PLUGIN_VERSION=3.7.1        -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-assembly-plugin
+SUREFIRE_PLUGIN_VERSION=3.2.5              -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-surefire-plugin
+MAVEN_SOURCE_PLUGIN_VERSION=3.3.1          -- https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-source-plugin
 
 -- test dependency
-JUPITER_VERSION=5.9.0                      -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-api
+JUPITER_VERSION=5.11.0-M2                  -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-api
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-engine
                                            -- https://repo.maven.apache.org/maven2/org/junit/jupiter/junit-jupiter-params
-MOCKITO_VERSION=4.8.0                      -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core/
-JAMAL_VERSION=2.5.0                        -- https://repo.maven.apache.org/maven2/com/javax0/jamal/
+MOCKITO_VERSION=5.12.0                     -- https://repo.maven.apache.org/maven2/org/mockito/mockito-core
+JAMAL_VERSION=2.6.0                        -- https://repo.maven.apache.org/maven2/com/javax0/jamal/jamal-all
 }

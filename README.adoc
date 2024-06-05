@@ -6,7 +6,7 @@
 
 
 == Introduction
-.This documentation is about the version 2.5.1 of the software.
+.This documentation is about the version 2.5.2-SNAPSHOT of the software.
 
 SourceBuddy is a Java library you can use to compile and load dynamically generated Java source code in your program.
 
@@ -83,7 +83,7 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>2.5.1</version>
+    <version>2.5.2-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -149,17 +149,18 @@ To demonstrate the use of the API, we will use the sample code:
  7.           }
  8.         }""";
  9. final var compiled = Compiler.java()
-10.         .from("com.sb.demo.FirstClass", sourceFirstClass)
-11.         .from(Paths.get("src/test/java"))
-12.         .compile();
-13. compiled.saveTo(Paths.get("./target/generated_classes"));
-14. compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));
-15. final var loaded = compiled.load();
-16. Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
-17. Object firstClassInstance = loaded.newInstance("com.sb.demo.FirstClass");
-18. loaded.stream().forEach(klass -> System.out.println(klass.getSimpleName()));
-19. final var compiler = loaded.reset();
-20. final var sameCompiler = compiled.reset();
+10.         .options("-g:none")
+11.         .from("com.sb.demo.FirstClass", sourceFirstClass)
+12.         .from(Paths.get("src/test/resources/src"))
+13.         .compile();
+14. compiled.saveTo(Paths.get("./target/generated_classes"));
+15. compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));
+16. final var loaded = compiled.load();
+17. Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
+18. Object firstClassInstance = loaded.newInstance("com.sb.demo.FirstClass");
+19. loaded.stream().forEach(klass -> System.out.println(klass.getSimpleName()));
+20. final var compiler = loaded.reset();
+21. final var sameCompiler = compiled.reset();
 
 ----
 
@@ -180,7 +181,68 @@ To get that, you have to call the
 
 ----
 
-=== 2.  Add sources
+=== 2.  Compiler Options
+
+You can set compiler options calling the method `options()`.
+
+[source,java]
+----
+                .options("-g:none")
+
+----
+
+In the example we are setting the option `-g:none`.
+
+You can use the same options as you would use when calling the `javac` compiler from the command line.
+Use the strings as you would use them in the command line including the leading `-` for the option keywords and using separate arguments for the values separated by spaces on the command line.
+
+In addition to the method `options()` there are convenience methods defined in the fluent API to set the most common options in a readable way.
+These methods are
+
+* `release(int)` sets the release version of the Java compiler.
+* `source(int)` sets the source version of the Java compiler.
+* `target(int)` sets the target version of the Java compiler.
+* `encoding(Charset)` sets the encoding of the source files.
+* `verbose()` sets the compiler to be verbose.
+* `debugInfo(DebugInfo)` sets the debug information level of the compiler.
+The possible values are `NONE`, `LINES`, `SOURCE`, `VARS`, and `ALL` as listed in the enumeration.
+* `noDebugInfo()` sets the compiler to suppress debug information.
+* `nowarn()` sets the compiler to suppress warnings.
+* `showDeprecation()` sets the compiler to show deprecation warnings.
+* `parameters()` sets the compiler to store formal parameter names of constructors and methods in the generated class files.
+* `addExports(Export...)` adds export directives to the module declaration.
+To create an `Export` object, use the methods of the class `Export`.
+A typical usage is
++
+[source,java]
+----
+addExports(Export.from("module").thePackage("package").to("otherModule"))
+----
++
+You can make a static import for the method `from` to make the code more readable.
+* `addModules(String...)` adds required modules to the module declaration.
+* `limitModules(String...)` limits the modules that are visible during compilation.
+* `module(String)` sets the module name of the compiled classes.
+
+
+The line in the example calls the method `options()` directly.
+Using the complimentary methods, we could have written the line as
+
+[source,java]
+----
+.debugInfo(NONE);
+----
+
+or even
+
+[source,java]
+----
+.noDebugInfo();
+----
+
+Adding options is not mandatory.
+
+=== 3.  Add sources
 
 The next step is to add the source files to the compiler object.
 To do that, you can specify the sources one by one as strings, or you can add directories where the source files are.
@@ -210,7 +272,7 @@ If the sources are in the file system in a directory, you can also call
 
 [source,java]
 ----
-                .from(Paths.get("src/test/java"))
+                .from(Paths.get("src/test/resources/src"))
 
 ----
 
@@ -227,7 +289,7 @@ The class name of a single class is calculated the same way as before when the p
 You can also provide the class name as string and a path to a single source file.
 ====
 
-=== 3.  Hide the class
+=== 4.  Hide the class
 
 You can call the method `hidden()` when you want to load a class hidden.
 Hidden and non-hidden classes can be mixed in one SourceBuddy compiler object.
@@ -237,7 +299,7 @@ Different versions of these methods accept arguments to specify lookup object, a
 
 Loading hidden classes is a complex topic, and it is detailed later in a separate chapter.
 
-=== 4.  Compile
+=== 5.  Compile
 
 After the program loaded the sources, the next thing is to compile:
 
@@ -248,9 +310,9 @@ After the program loaded the sources, the next thing is to compile:
 ----
 
 The compilation generates the bytes codes for the Java source files.
-They are not loaded as Java classes into the memory yet.
+They are not loaded as Java classes into the memory yet, but are available for loading or direct byte code access.
 
-=== 5.  Save the byte codes
+=== 6.  Save the byte codes
 
 The next step you can do is saving the byte codes.
 It is not a must.
@@ -270,7 +332,7 @@ Adding this directory to a standard URL class loader will be able to load these 
 The return value of this method is `void`, not chainable.
 This method is usually the last action you invoke on a compiler.
 
-=== 6.  Stream through the byte codes
+=== 7.  Stream through the byte codes
 
 Sometimes you do not want to save the byte code to `.class` files.
 You can use the compiler object at this stage to iterate through the compiled codes, calling
@@ -293,7 +355,7 @@ NOTE: The `getBinaryName()` implementation supports JVM byte code up to 66, whic
 Note that these version values are automatically pulled from the source code using Jamal.
 They are always up-to-date in this documentation.
 
-=== 7.  Load the classes
+=== 8.  Load the classes
 
 Applications usually want to load the classes after compilation.
 The aptly named method `load()` does that.
@@ -386,7 +448,7 @@ This will tell if there were any classes not loaded.
 You can also get the binary names of these classes calling `Stream<String> streamFailed()`.
 
 
-=== 8.  Get access to the classes
+=== 9.  Get access to the classes
 
 When the classes are loaded, your code will want to access some of them.
 Since the program creates these classes run-time, they are not available during the compile time of your program.
@@ -434,7 +496,7 @@ The Java compiler adds the outer class instance as the first argument to the con
 The constructor stores the value in a generated field in the inner class, and the generated code uses this field to access the outer class instance.
 When the class you want to load is the inner class of an inner class, the situation gets even more complex.
 
-=== 9.  Stream through the class objects
+=== 10.  Stream through the class objects
 
 You can also get a stream of the classes.
 
@@ -448,7 +510,7 @@ Note that this is not the same `stream()` method we called after the compilation
 That method returned a stream of byte arrays.
 This method returns a stream of class objects.
 
-=== 10.  Reset the compiler
+=== 11.  Reset the compiler
 
 Last but not least, you can reset the compiler.
 You may need to reset the compiler to reuse it to compile additional sources.
@@ -497,18 +559,18 @@ The object you get back from both of these calls is the same as the one you orig
 
 except that it already contains the classes you added previously.
 
-WARNING: You can not redefine a class the program has already compiled.
+WARNING: You cannot redefine a class the program has already compiled.
 The compilation will fail the same way as if you specified two identically named classes.
 You cannot have two identically named classes added to a compiler object even if hidden.
 
 == Loading Hidden Classes
 
 This chapter describes some technical details about hidden class loading.
-In the previous chapter in section 7.  we discussed the hidden class loading.
+In the previous chapter in section 8.  we discussed the hidden class loading.
 There is a method `hidden()` to specify that the last source/class added to the compiler is hidden.
 The method has a version that accepts a lookup object as argument; and we also said that using it without this argument is more resource intensive.
 
-In this chapter we will describe why it is the case.
+In this chapter, we will describe why it is the case.
 Understanding the details here is not necessary to use the library.
 
 The simple approach is the following:
@@ -655,8 +717,8 @@ In the unit tests you can see cases when private methods are called, and also er
 
 [NOTE]
 ====
-To create and load an inner class to an already existing class you need a lookup object from the already existing class.
-To do that the class implements the `DynExt` interface.
+You need a lookup object from the already existing class to create and load an inner class to an already existing class.
+The class implements the `DynExt` interface to support this.
 The method `getLookup()` will provide a lookup object from the same package, from the same module.
 It makes it possible to get an inner class that can be the nest mate of the already existing class.
 ====

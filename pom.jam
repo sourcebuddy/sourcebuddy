@@ -1,4 +1,4 @@
-{@comment writableOutput}
+{@comment writableOutput external}
 {@import https://raw.githubusercontent.com/central7/pom/1/pom.jim}
 {@import versions.jim}
 {@define taglets($x)=<taglets>$x</taglets>}
@@ -70,6 +70,13 @@
             }
             {plugin|
                 {GAV :org.apache.maven.plugins:maven-surefire-plugin:{SUREFIRE_PLUGIN_VERSION}}
+                {configuration|
+                    <argLine>
+                          --add-opens com.javax0.sourcebuddy/com.javax0.sourcebuddy=ALL-UNNAMED
+                          --add-opens com.javax0.sourcebuddy/com.javax0.sourcebuddytest=ALL-UNNAMED
+                          --add-opens com.javax0.sourcebuddy/com.sb.demo=ALL-UNNAMED
+                    </argLine>
+                }
             }
             {plugin|
                 {GAV :com.javax0.jamal:jamal-maven-plugin:{JAMAL_VERSION}}
