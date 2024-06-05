@@ -6,7 +6,7 @@
 
 
 == Introduction
-.This documentation is about the version 2.5.2-SNAPSHOT of the software.
+.This documentation is about the version 2.5.2 of the software.
 
 SourceBuddy is a Java library you can use to compile and load dynamically generated Java source code in your program.
 
@@ -32,7 +32,7 @@ myClass.say();
 ----
 
 SourceBuddy is a simple Java source compiler facade in front of the JDK-provided `javac` compiler.
-You need follow the steps as depicted here:
+You need to follow the steps as depicted here:
 
 image::images/compile_flow.svg[]
 
@@ -83,11 +83,14 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>2.5.2-SNAPSHOT</version>
+    <version>2.5.2</version>
 </dependency>
 ----
 
 SourceBuddy requires Java 17.
+
+The library is modularized starting with the release `2.5.2`.
+It means that you have to add a `requires` statement to your `module-info.java` file.
 
 Documentation on the different link:RELEASES.adoc[releases].
 
