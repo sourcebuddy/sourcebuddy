@@ -17,6 +17,7 @@ public class OuterClass implements DynExt {
         return z;
     }
 
+    @Override
     public MethodHandles.Lookup getLookup(){
         return MethodHandles.lookup();
     }

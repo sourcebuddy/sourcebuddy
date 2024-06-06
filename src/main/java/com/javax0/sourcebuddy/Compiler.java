@@ -36,20 +36,28 @@ import java.util.stream.Stream;
 public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.CanCompile, Fluent.SpecifyNestHiddenNamed, Fluent.Compiled {
 
     /**
-     * Class loadig options, {@code REVERSE} and {@code NORMAL}. The default is {@code NORMAL}.
+     * Class loading options, {@code REVERSE}, {@code NORMAL}, and {@code SLOPPY}. The default is {@code NORMAL}.
+     *
+     * {@code REVERSE} will try to load the class before asking the parent class loader to load it.
+     * {@code NORMAL} will ask the parent class loader to load the class first. This is the traditional behavior.
+     * {@code SLOPPY} will try to load the class even if there was an error during the compilation.
+     *
      */
     public enum LoaderOption {
         // snippet LoaderOption
         REVERSE, // will load the compiled classes first even if a class with the same name is already loaded.
-        // The default behaviour is to call the parent class loader first.
+        // The default behavior is to call the parent class loader first.
         // Using this option reverses this strategy.
-        // In the case of hidden classes this is the default strategy and there is no possibility to reverse it.
+        // In the case of hidden classes, this is the strategy and there is no possibility to reverse it.
         NORMAL, // is the default.
         // Consult the parent class loader first to load classes.
         // The compiler's class loader is used only if the other class loaders could not load the class.
         SLOPPY, // to allow sloppy loading.
-        // Loading the compiled classes may fail if a class cannot be loaded.
-        // This option will ignore the errors and will try to load the classes that can be loaded.
+        // Some classes may not be loaded.
+        // Usually some error in the compilation process is the culprit.
+        // The calling code may still want to load the classes compiled successfully.
+        // This option will ignore such errors and will try to load the rest of the classes.
+        // The stream of failed classes can be obtained using the `Loaded.streamFailed()` method.
         // end snippet
     }
 
@@ -92,7 +100,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         /**
          * Create a new loaded instance and load the classes.
          * The class loading goes on if there are classes not loadable.
-         * It can happen when some class was added as compiled already using the method {@link #byteCode(byte[])}
+         * It can happen when some class was added as compiled already using the method {@link #byteCode(byte[])
          * byteCode()} method.
          * When the byte code of the class needs loading some class, which is not on the classpath, then the loading
          * throws {@link NoClassDefFoundError} error.

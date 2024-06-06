@@ -330,12 +330,12 @@ public class CompilerTest {
     @DisplayName("When all classes are loaded then the check for fully loaded is true")
     void testFullyLoadedSucceeds() throws Exception {
         final var code = Compiler.java().from("package A;public class A{}").compile().get();
-        final var loaded = Compiler.java().byteCode(code).load(Compiler.LoaderOption.SLOPPY);
+        final var loaded = Compiler.java().byteCode(code).load(Compiler.LoaderOption.NORMAL);
         Assertions.assertTrue(loaded.fullyLoaded());
     }
 
     @Test
-    @DisplayName("When all classes are loaded then the check for fully loaded is true")
+    @DisplayName("When not all classes are loaded then the check for fully loaded is false and get the missing class names")
     void testSloppyLoadingSucceeds() throws Exception {
         final var code = Compiler.java()
                 .from("package A;public class A extends B{}")

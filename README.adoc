@@ -6,7 +6,7 @@
 
 
 == Introduction
-.This documentation is about the version 2.5.3 of the software.
+.This documentation is about the version 2.5.4-SNAPSHOT of the software.
 
 SourceBuddy is a Java library you can use to compile and load dynamically generated Java source code in your program.
 
@@ -83,7 +83,7 @@ The Maven central coordinates are:
 <dependency>
     <groupId>com.javax0.sourcebuddy</groupId>
     <artifactId>SourceBuddy</artifactId>
-    <version>2.5.3</version>
+    <version>2.5.4-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -178,6 +178,8 @@ To start the compilation, you must have a `Compiler` object.
 To get that, you have to call the
 
 
+
+.line 9.
 [source,java]
 ----
         final var compiled = Compiler.java()
@@ -188,6 +190,8 @@ To get that, you have to call the
 
 You can set compiler options calling the method `options()`.
 
+
+.line 10.
 [source,java]
 ----
                 .options("-g:none")
@@ -253,6 +257,8 @@ The overloaded method `from()` is used for both operations.
 
 To add sources individually, you can call
 
+
+.line 11.
 [source,java]
 ----
                 .from("com.sb.demo.FirstClass", sourceFirstClass)
@@ -273,6 +279,8 @@ To add multiple sources, you can call this method multiple times.
 
 If the sources are in the file system in a directory, you can also call
 
+
+.line 12.
 [source,java]
 ----
                 .from(Paths.get("src/test/resources/src"))
@@ -285,6 +293,7 @@ It is the directory where the directory structure matching the Java package stru
 You can have many calls to this method if you have multiple source trees on the disk.
 You can also add some sources as strings, individually and others scanned from the file system.
 
+.Class name calculation
 [NOTE]
 ====
 The class names are calculated from the directory structure and the name of the file.
@@ -306,6 +315,8 @@ Loading hidden classes is a complex topic, and it is detailed later in a separat
 
 After the program loaded the sources, the next thing is to compile:
 
+
+.line 13.
 [source,java]
 ----
                 .compile();
@@ -317,10 +328,12 @@ They are not loaded as Java classes into the memory yet, but are available for l
 
 === 6.  Save the byte codes
 
-The next step you can do is saving the byte codes.
+The next step is saving the byte codes.
 It is not a must.
 You can ignore this step if you do not need the compiled byte codes in the file system.
 
+
+.line 14.
 [source,java]
 ----
         compiled.saveTo(Paths.get("./target/generated_classes"));
@@ -340,6 +353,8 @@ This method is usually the last action you invoke on a compiler.
 Sometimes you do not want to save the byte code to `.class` files.
 You can use the compiler object at this stage to iterate through the compiled codes, calling
 
+
+.line 15.
 [source,java]
 ----
         compiled.stream().forEach(bc -> System.out.println(Compiler.getBinaryName(bc)));
@@ -363,6 +378,8 @@ They are always up-to-date in this documentation.
 Applications usually want to load the classes after compilation.
 The aptly named method `load()` does that.
 
+
+.line 16.
 [source,java]
 ----
         final var loaded = compiled.load();
@@ -376,15 +393,18 @@ The method `load()` can get `Compiler.LoaderOption` arguments.
 The possible values are
 
 * `REVERSE`  will load the compiled classes first even if a class with the same name is already loaded.
-         The default behaviour is to call the parent class loader first.
+         The default behavior is to call the parent class loader first.
          Using this option reverses this strategy.
-         In the case of hidden classes this is the default strategy and there is no possibility to reverse it.
+         In the case of hidden classes, this is the strategy and there is no possibility to reverse it.
 * `NORMAL`  is the default.
          Consult the parent class loader first to load classes.
          The compiler's class loader is used only if the other class loaders could not load the class.
 * `SLOPPY`  to allow sloppy loading.
-         Loading the compiled classes may fail if a class cannot be loaded.
-         This option will ignore the errors and will try to load the classes that can be loaded.
+         Some classes may not be loaded.
+         Usually some error in the compilation process is the culprit.
+         The calling code may still want to load the classes compiled successfully.
+         This option will ignore such errors and will try to load the rest of the classes.
+         The stream of failed classes can be obtained using the `Loaded.streamFailed()` method.
 
 
 When a class was specified to be hidden calling the method `hidden()` after the `from()` method the class is loaded as hidden class.
@@ -396,14 +416,22 @@ On the other hand, `getCanonicalName()` will return `null`.
 `getCanonicalName()` returns the format of the name used in the Java source code to refer to the class.
 Since it is `null` you cannot reference these classes.
 
-NOTE: Even though these classes "have no name", you still have to give them some name following the `class` keyword.
-This name for the Java run-time is not interesting.
-You can load many hidden classes in the source code with the same name.
-SourceBuddy, on the other hand, needs a distinguishing name unique inside one compiler object.
-It can also load several versions of a single named hidden class, but you must use different compiler objects.
-The reason: the `Compiler` object identifies the classes using the names you provided for the compilation.
-If two classes have the same name, then `loaded.get(className)` would not know which version it has to return.
 
+.You must name your hidden classes for SourceBuddy
+[NOTE]
+====
+Even though these classes "have no name", you still have to give them some name following the `class` keyword.
+This name for the Java run-time is not interesting.
+You could load many hidden classes of the same name in the source.
+This would not bother the Java run-time.
+
+SourceBuddy, on the other hand, needs a distinguishing unique name inside one compiler object.
+It can also load several versions of a single named hidden class, but then you must use different compiler objects.
+The reason: the `Compiler` object identifies the classes using the names you provided for the compilation.
+If two classes had the same name, then `loaded.get(className)` would not know which version to return.
+====
+
+.You need a lookup object to load hidden classes
 [NOTE]
 ====
 The hidden class loading cannot work without a `Lookup` object.
@@ -435,6 +463,7 @@ Compiler.java().from("Z", "class Z{}").hidden().compile().load();
 Calling the method `loadHidden()` without a lookup object is more resource intensive.
 ====
 
+.Hidden classes use the `ClassOption` vararg
 [NOTE]
 ====
 The hidden class loading can also have `ClassOption` vararg arguments.
@@ -465,6 +494,8 @@ After that, you can
 
 To get a class object by its name, you can call
 
+
+.line 17.
 [source,java]
 ----
         Class<?> firstClassClass = loaded.get("com.sb.demo.FirstClass");
@@ -474,6 +505,8 @@ To get a class object by its name, you can call
 There is also a complimentary method called `newInstance(String className)`.
 When you call
 
+
+.line 18.
 [source,java]
 ----
         Object firstClassInstance = loaded.newInstance("com.sb.demo.FirstClass");
@@ -492,17 +525,23 @@ This is the general version of the method to create an instance.
 When creating an inner class to an already existing class, this is the only way to create an instance.
 A non-static inner class constructor always needs an instance of the outer class as argument.
 
-NOTE: The Java source code does not use this argument.
+.Non-Static inner class constructors have special arguments
+[NOTE]
+====
+The Java source code does not use this argument.
 This argument is automatically added to the constructor by the Java compiler.
 The non-static inner class can access the members of the outer class, and this is how it is done.
 The Java compiler adds the outer class instance as the first argument to the constructor of the inner class.
 The constructor stores the value in a generated field in the inner class, and the generated code uses this field to access the outer class instance.
 When the class you want to load is the inner class of an inner class, the situation gets even more complex.
+====
 
 === 10.  Stream through the class objects
 
 You can also get a stream of the classes.
 
+
+.line 19.
 [source,java]
 ----
         loaded.stream().forEach(klass -> System.out.println(klass.getSimpleName()));
@@ -519,6 +558,8 @@ Last but not least, you can reset the compiler.
 You may need to reset the compiler to reuse it to compile additional sources.
 In most cases, it is better to get a new compiler calling
 
+
+.line 9.
 [source,java]
 ----
         final var compiled = Compiler.java()
@@ -537,6 +578,8 @@ I recommend not resetting the compiler object except when needed.
 
 To reset the compiler, you can invoke the method
 
+
+.line 20.
 [source,java]
 ----
         final var compiler = loaded.reset();
@@ -546,6 +589,8 @@ To reset the compiler, you can invoke the method
 
 You can invoke this method on the compiler object, even if you used it to create a "Loaded" object:
 
+
+.line 21.
 [source,java]
 ----
         final var sameCompiler = compiled.reset();
@@ -554,6 +599,8 @@ You can invoke this method on the compiler object, even if you used it to create
 
 The object you get back from both of these calls is the same as the one you originally got calling
 
+
+.line 9.
 [source,java]
 ----
         final var compiled = Compiler.java()
@@ -562,9 +609,13 @@ The object you get back from both of these calls is the same as the one you orig
 
 except that it already contains the classes you added previously.
 
-WARNING: You cannot redefine a class the program has already compiled.
+.No class redefinition is allowed by Java
+[WARNING]
+====
+You cannot redefine a class the program has already compiled.
 The compilation will fail the same way as if you specified two identically named classes.
 You cannot have two identically named classes added to a compiler object even if hidden.
+====
 
 == Loading Hidden Classes
 
@@ -629,12 +680,13 @@ final var lookup = (MethodHandles.Lookup) ((Supplier<?>) supplier.getConstructor
 
 ----
 
+.Package and class names
 [NOTE]
 ====
 In the code above the variable `p.line` contains the keyword `package`, the name of the package and a `;` semicolon at the end.
-When the generated class is in the default package this variable is empty.
+This variable is empty when the generated class is in the default package.
 
-`name` is the simple name, `canonicalName` is the canonical name of the class.
+The `name` is the simple name, `canonicalName` is the canonical name of the class.
 The class name is a random unique string (random uuid).
 
 ====
@@ -681,6 +733,7 @@ public class OuterClass implements DynExt {
         return z;
     }
 
+    @Override
     public MethodHandles.Lookup getLookup(){
         return MethodHandles.lookup();
     }
@@ -716,8 +769,9 @@ Assertions.assertEquals(56, outer.getZ());
 
 As you can see the class `OuterClass` in the dynamically added source code does not contain the methods.
 It only contains the private `int` field used by the new inner class.
-In the unit tests you can see cases when private methods are called, and also erroneous, failing examples.
+You can see cases when private methods are called, and also erroneous, failing examples in the unit tests.
 
+.Getting a lookup object implementing `DynExt`
 [NOTE]
 ====
 You need a lookup object from the already existing class to create and load an inner class to an already existing class.
@@ -744,4 +798,3 @@ I will react and help you as much as I can afford.
 You are welcome to open tickets in GitHub if you have any question, but also for suggestions and only if you like the tool.
 Usually I struggle with lacking the information about how many are using my tools.
 Do not leave me in the dark.
-

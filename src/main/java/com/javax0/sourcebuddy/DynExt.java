@@ -3,7 +3,7 @@ package com.javax0.sourcebuddy;
 import java.lang.invoke.MethodHandles;
 
 /**
- * This interface can play some role in your code providing lookup objects.
+ * This interface can be used in your code providing lookup objects.
  * <p>
  * There are three different ways to provide a lookup object when creating a nest mate class.
  *
@@ -19,7 +19,7 @@ import java.lang.invoke.MethodHandles;
  * field or method. Implementing this interface is technically the same as the first approach. The only difference is
  * that using the interface establishes a convention. When you see that a class implements {@code
  * com.javax0.sourcebuddy.DynExt} you know that it is practically the first approach with the addition that the name of
- * the mthod is {@link #getLookup()}.
+ * the method is {@link #getLookup()}.
  * <p>
  * Note<sub>2</sub>: This interface cannot implement this method as a default method. Doing so would result a lookup
  * object belonging to this package and not the package where the nesting host class is. This is because the call to
@@ -29,13 +29,26 @@ import java.lang.invoke.MethodHandles;
 public interface DynExt {
     /**
      * Create and return a lookup object.
-     *
+     * <p>
      * The implementation may return a lookup object, which was created before.
      * The returned lookup object may be a value stored in a static field created during class initialization.
-     *
+     * <p>
      * Lookup objects remember the class that was calling the {@link MethodHandles#lookup()} method.
      * The created lookup object can be used to load hidden classes to be a new nest mate of the calling class.
      * There is no way to create a lookup object for a class from outside the class.
+     * This is a designed security feature of the JVM.
+     *
+     * For this very reason, the implementation of this method should be in the class that is going to be the nest mate
+     * of the class that contains the method.
+     *
+     * The simplest implementation is:
+     *
+     * <pre>{@code
+     * @Override
+     * public MethodHandles.Lookup getLookup(){
+     *         return MethodHandles.lookup();
+     *     }
+     * }</pre>
      *
      * @return the lookup object that was created form the implementing class.
      */
