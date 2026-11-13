@@ -27,16 +27,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
     <build>
         <plugins>
             <plugin>
@@ -46,6 +36,43 @@
                 <executions>
                     <execution>
                         <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <configuration>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <doclint>none</doclint>
+                    <doclet>javax0.jamal.doclet.JamalDoclet</doclet>
+                    <docletArtifact>
+                        <groupId>com.javax0.jamal</groupId>
+                        <artifactId>jamal-doclet</artifactId>
+                        <version>2.8.2</version>
+                    </docletArtifact>
+                    <additionalOptions>
+                        <additionalOption>--source-root</additionalOption>
+                        <additionalOption>${project.build.sourceDirectory}</additionalOption>
+                    </additionalOptions>
+                    <taglets>
+                        <taglet>
+                            <tagletClass>javax0.jamal.doclet.JamalTaglet</tagletClass>
+                            <tagletArtifact>
+                                <groupId>com.javax0.jamal</groupId>
+                                <artifactId>jamal-doclet</artifactId>
+                                <version>2.8.2</version>
+                            </tagletArtifact>
+                        </taglet>
+                    </taglets>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
                         <goals>
                             <goal>jar</goal>
                         </goals>
@@ -75,14 +102,13 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.7.0</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.8.0</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
         </plugins>
