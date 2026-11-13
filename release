@@ -1,3 +1,4 @@
 #!/bin/bash
 
 mvn -Prelease deploy
+

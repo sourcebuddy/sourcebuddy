@@ -6,9 +6,9 @@ import java.io.IOException;
 
 class ByteCodeGouger {
     // snipline JVM_VERSION
-    private final static int JVM_VERSION = 66;
+    private final static int JVM_VERSION = 71;
     // snipline JAVA_VERSION
-    private final static int JAVA_VERSION = 20;
+    private final static int JAVA_VERSION = 27;
 
     static int major(byte[] byteCode) {
         if (byteCode.length < 8) {
@@ -49,7 +49,7 @@ class ByteCodeGouger {
             if (major > JVM_VERSION) {
                 throw new RuntimeException("This version support Java up to version %d.".formatted(JAVA_VERSION));
             }
-            final int constantPoolCount = is.readShort(); // 2 bytes
+            final int constantPoolCount = is.readUnsignedShort(); // 2 bytes
             final var classes = new int[constantPoolCount - 1];
             final var strings = new String[constantPoolCount - 1];
             for (int i = 0; i < constantPoolCount - 1; i++) {
@@ -76,7 +76,8 @@ class ByteCodeGouger {
                     // method ref
                     // interface method ref
                     // name and type
-                    case 3, 4, 9, 10, 11, 12, 18 -> { // invoke dynamic
+                    // dynamic
+                    case 3, 4, 9, 10, 11, 12, 17, 18 -> { // invoke dynamic
                         read4(is);
                     }
                     case 15 -> { // method handle
@@ -95,14 +96,18 @@ class ByteCodeGouger {
             }
             is.readShort(); // 2 bytes skip access flags
             final var classNameIndex = is.readUnsignedShort(); // 2 bytes
-            if (classNameIndex >= constantPoolCount - 1) {
+            if (classNameIndex >= constantPoolCount - 1 || classNameIndex == 0) {
                 throw new RuntimeException("The binary class file seems to be corrupt.");
             }
             final var classNameStringIndex = classes[classNameIndex - 1] - 1;
             if (classNameStringIndex >= constantPoolCount - 1) {
                 throw new RuntimeException("The binary class file seems to be corrupt.");
             }
-            return strings[classNameStringIndex].replace('/', '.');
+            final var className = strings[classNameStringIndex];
+            if (className == null) {
+                throw new RuntimeException("The binary class file seems to be corrupt.");
+            }
+            return className.replace('/', '.');
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

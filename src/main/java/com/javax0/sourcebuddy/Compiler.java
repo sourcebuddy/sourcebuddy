@@ -12,7 +12,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.jar.JarFile;
@@ -37,7 +36,7 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
 
     /**
      * Class loading options, {@code REVERSE}, {@code NORMAL}, and {@code SLOPPY}. The default is {@code NORMAL}.
-     *
+     * <p>
      * {@code REVERSE} will try to load the class before asking the parent class loader to load it.
      * {@code NORMAL} will ask the parent class loader to load the class first. This is the traditional behavior.
      * {@code SLOPPY} will try to load the class even if there was an error during the compilation.
@@ -849,9 +848,11 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         }
         return options("-g:" + (debugInfo.toString().toLowerCase()));
     }
-    public Fluent.CanIsolate noDebugInfo(){
+
+    public Fluent.CanIsolate noDebugInfo() {
         return debugInfo(DebugInfo.NONE);
     }
+
     @Override
     public Fluent.CanIsolate nowarn() {
         return options("-nowarn");
@@ -1100,7 +1101,10 @@ public class Compiler implements Fluent.AddSource, Fluent.CanIsolate, Fluent.Can
         stream().forEach(byteCode -> {
             try {
                 final var fileName = getBinaryName(byteCode).replaceAll("\\.", "/") + ".class";
-                final var targetFile = Paths.get(target.toString(), fileName);
+                final var targetFile = target.resolve(fileName).normalize();
+                if (!targetFile.startsWith(target.normalize())) {
+                    throw new SecurityException("Class binary name escapes '" + target + "' directory: " + fileName);
+                }
                 Files.createDirectories(targetFile.getParent());
                 Files.write(targetFile, byteCode, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
             } catch (Exception e) {

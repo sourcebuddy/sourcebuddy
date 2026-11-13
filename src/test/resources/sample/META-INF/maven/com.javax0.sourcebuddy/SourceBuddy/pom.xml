@@ -59,26 +59,10 @@
                 <configuration>
                     <detectOfflineLinks>false</detectOfflineLinks>
                     <doclint>none</doclint>
-                    <doclet>javax0.jamal.doclet.JamalDoclet</doclet>
-                    <docletArtifact>
-                        <groupId>com.javax0.jamal</groupId>
-                        <artifactId>jamal-doclet</artifactId>
-                        <version>1.12.4</version>
-                    </docletArtifact>
                     <additionalOptions>
                         <additionalOption>--source-root</additionalOption>
                         <additionalOption>${project.build.sourceDirectory}</additionalOption>
                     </additionalOptions>
-                    <taglets>
-                        <taglet>
-                            <tagletClass>javax0.jamal.doclet.JamalTaglet</tagletClass>
-                            <tagletArtifact>
-                                <groupId>com.javax0.jamal</groupId>
-                                <artifactId>jamal-doclet</artifactId>
-                                <version>1.12.4</version>
-                            </tagletArtifact>
-                        </taglet>
-                    </taglets>
                 </configuration>
                 <executions>
                     <execution>
@@ -122,12 +106,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>4.8.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.javax0.jamal</groupId>
-            <artifactId>jamal-all</artifactId>
-            <version>1.12.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>

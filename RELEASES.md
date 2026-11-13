@@ -1,72 +1,67 @@
-{%@sep{} %}
-{@import samplemacros.jim}
-== pass:[{SB}] Release history
-{@define RELEASE($X)=link:https://github.com/sourcebuddy/sourcebuddy/tree/$X[$X]}
+# SourceBuddy Release history
 
-
-
-=== {RELEASE 2.5.3}
+## [2.5.3](https://github.com/sourcebuddy/sourcebuddy/tree/2.5.3)
 
 Bug fix when specifying files on Windows, the file separator was not handled correctly.
 This release allows you to use `/` and `\` interchangeably in the file names on any operating system.
 
-=== {RELEASE 2.5.2}
+## [2.5.2](https://github.com/sourcebuddy/sourcebuddy/tree/2.5.2)
 
 The library now supports the Java module system.
 The library itself is a module `com.javax0.sourcebuddy`.
 
 In addition to this the library added several methods to the fluent API to set different common Java compiler options.
 
-=== {RELEASE 2.5.1}
+## [2.5.1](https://github.com/sourcebuddy/sourcebuddy/tree/2.5.1)
 
 * Bug fix to recognize the name of the class from the source code in the case of
 
-** `interface`,
-** `enum`, and
-** `record` classes.
+  * `interface`,
+  * `enum`, and
+  * `record` classes.
 
-=== {RELEASE 2.5.0}
+## [2.5.0](https://github.com/sourcebuddy/sourcebuddy/tree/2.5.0)
 
 * Support direct handling of the classpath.
 * Support for JVM 22 formatted files.
   There was no change in the format, only _the_ latest supported class format version was upped to 66 in the ByteCodeGouger
 
-=== {RELEASE 2.4.1}
+## [2.4.1](https://github.com/sourcebuddy/sourcebuddy/tree/2.4.1)
 
 Support for JVM 21 formatted files.
 
-=== {RELEASE 2.4.0}
+## [2.4.0](https://github.com/sourcebuddy/sourcebuddy/tree/2.4.0)
 
 This release can be used to load byte code compiled outside the scope of the compiler object.
 This means new method `byteCode()` added to the `Compiler` object.
 Along with this, there is a new method `canCompile()` to check if the compiler is available on the platform.
 
-=== {RELEASE 2.3.2}
+## [2.3.2](https://github.com/sourcebuddy/sourcebuddy/tree/2.3.2)
 
 Minor bug fix.
 
-=== {RELEASE 2.3.1}
+## [2.3.1](https://github.com/sourcebuddy/sourcebuddy/tree/2.3.1)
 
 Bug fixed.
 In previous releases, you could not get the stream of loaded classes when there was a `module-info.java` file.
 The creation of the `Loaded` object avoided loading the binary for the `module-info` but the stream creation did not.
 
-=== {RELEASE 2.3.0}
+## [2.3.0](https://github.com/sourcebuddy/sourcebuddy/tree/2.3.0)
 
 Adding support for Java 20.
 
-=== {RELEASE 2.2.0}
+## [2.2.0](https://github.com/sourcebuddy/sourcebuddy/tree/2.2.0)
 
 You can add modules to the compilation unit using the `modules()` method.
 Class and module path are added automatically to the compiler options unless you call `isolate()`.
 
-=== {RELEASE 2.1.0}
+## [2.1.0](https://github.com/sourcebuddy/sourcebuddy/tree/2.1.0)
 
 The individual classes can be each hidden or named (not hidden).
 Named classes can also be loaded using a lookup object.
 Class can be denoted as nesting class mimicking already existing class.
 
-=== {RELEASE 2.0.0}
+## [2.0.0](https://github.com/sourcebuddy/sourcebuddy/tree/2.0.0)
 
 Major restructuring of the class loading structure.
 With this release, hidden and non-hidden classes can be mixed.
@@ -75,17 +70,16 @@ Instead, you can call `hidden()` for each added source separately.
 
 Since this change, removing a method from the API is not backward compatible, this is a new major version.
 
-=== {RELEASE 1.1.1}
+## [1.1.1](https://github.com/sourcebuddy/sourcebuddy/tree/1.1.1)
 
 Fix to cache some resources.
 Prior versions had a bug not storing created methods handles in the cache.
 
-=== {RELEASE 1.1.0}
+## [1.1.0](https://github.com/sourcebuddy/sourcebuddy/tree/1.1.0)
 
 Fix to work with hidden classes properly and also adds extra APU.
 
-=== {RELEASE 1.0.0}
+## [1.0.0](https://github.com/sourcebuddy/sourcebuddy/tree/1.0.0)
 
 Initial release.
 Support hidden classes, but it does not work due to a bug.
-

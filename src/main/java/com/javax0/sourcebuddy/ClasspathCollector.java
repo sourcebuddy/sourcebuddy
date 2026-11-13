@@ -64,7 +64,7 @@ public class ClasspathCollector {
                 }
             }
         } catch (IOException ignore) {
-            // Ifa file is not accessible, or has a bad JAR format, then it will cause and issue
+            // If a file is not accessible, or has a bad JAR format, then it will cause and issue
             // when running the compiler or the code. In that case, it is not a problem that
             // we ignore the exception here.
             //
